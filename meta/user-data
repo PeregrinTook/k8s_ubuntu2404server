@@ -1,0 +1,22 @@
+﻿#cloud-config
+autoinstall:
+  version: 1
+  user-data:
+    hostname: ubuntu-server-test
+    users:
+      - name: alex
+        password: "serv"
+        ssh_authorized_keys:
+          - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQCLV6Jg5YqKKicCiYGghmxFrZqRzikT8QM+oAEq7gzTJlK9z+PHxyjS0gv5ombPIA7Ybbo0liuOhUuIzTAU4LNyHM8zuYI/V9ZRSN5znPSbG4+v2D9Nzh9/u+2yAE5b3IGEUJHRc5joNA/lNTWR0V1UyWYb7UHXxkoDr3L/LiN287rEN6UB8yXwLYHg/+Hj5JkR7zpBCo33YP5Tl5jxI5geSAieHB+RuGm4CJV+RHJupR44lhZOuRyDCoA6F97nZKgvlMQZH9DB4xpM3d2zBP/cRcFNsQD8fTD9nRRBv09/zdOaxg5jF5lRDWIZ6zyaY+dlwq83073Oa3Wa8Q2o5bFEeUZmUdvgISXsWVZITPoXgO/voSwegvK9vfN73nK543kgoUo55es4bTSVHBtvS/9h7tFFJ51h90tLXlG/QJPOxKOCF4ps8h/mXFC5m5dW9HY2RGLnMVEr9JMY2oCzU+EaJMgezntiyVUww+mhLJeyR0IOUarwDMjNQ2WjEFyclDhBTJu4vbO1QWl6uQ3PWdDwy17J0A/DG7j4fhwrMI0gjdOa44HR4HXzFOuGDZoSk9VIaIjKgnDV99sKqVN9rbTGctMer6BgXaDPHz4p9rT1FJ9r3LP591oWsSXUZdj0SdkdOmr5dsPx7Lgg7Nf7gPk3nLA6QesY8jJL2lryv3rDXQ== alexkol@alexkol
+        sudo: ALL=(ALL) NOPASSWD:ALL
+  ssh:
+    install-server: true
+  network:
+    network:
+      version: 2
+      ethernets:
+        enp0s8:
+          addresses:
+            - 192.168.56.70/24
+          dhcp4: false
+          gateway4: 192.168.56.1
