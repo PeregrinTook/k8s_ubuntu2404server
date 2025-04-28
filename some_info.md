@@ -30,3 +30,4 @@ ssh-copy-id k8s-worker1@192.168.56.60
 
 VBoxManage list vms
 VBoxManage startvm "test" --type headless
+VBoxManage "test" poweroff
