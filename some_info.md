@@ -29,5 +29,7 @@ sudon reboot now
 ssh-copy-id k8s-worker1@192.168.56.60
 
 VBoxManage list vms
+VBoxManage list runningvms
+
 VBoxManage startvm "test" --type headless
-VBoxManage "test" poweroff
+VBoxManage controlvm "Ubuntu_VM" poweroff
