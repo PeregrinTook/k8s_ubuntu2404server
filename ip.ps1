@@ -11,17 +11,70 @@ Write-Output "IP-адрес: $ip"
 Write-Output "Маска подсети: $subnetMask"
 
 # arp -a
-$ip_for_updating = Get-NetNeighbor | Where-Object {$_.LinkLayerAddress -eq "8c-89-a5-0f-aa-19"} | Select-Object -ExpandProperty IPAddress
+$macAddress = "8c-89-a5-0f-aa-19"
 
-if ($ip_for_updating) {
-    Write-Output "Запись для IP найдена:"
-    # Write-Output $ip_for_updating
-    Test-Connection -ComputerName $ip_for_updating -Count 1
-} else {
-    Write-Output "Запись для IP $ip_for_updating не найдена или пуста."
+# Функция для проверки и пинга
+function Test-ARPConnection {
+    param (
+        [string]$macAddress,
+        [int]$maxAttempts = 10
+    )
+
+    $attemptCount = 0  # Счетчик попыток
+
+    while ($attemptCount -lt $maxAttempts) {
+        # Ищем запись с данным MAC-адресом в ARP-таблице
+        $arpEntry = Get-NetNeighbor | Where-Object {$_.LinkLayerAddress -eq $macAddress}
+
+        # Если запись найдена
+        if ($arpEntry) {
+            $ipForTesting = $arpEntry.IPAddress
+            $state = $arpEntry.State
+
+            Write-Output "Запись для MAC $macAddress найдена в состоянии $state. Тестирую сеть с IP $ipForTesting..."
+
+            # Если состояние записи Reachable, выполняем пинг
+            if ($state -eq 'Reachable') {
+                $networkTest = Test-Connection -ComputerName $ipForTesting -Count 1 -Quiet
+
+                if ($networkTest) {
+                    Write-Output "Сеть с IP $ipForTesting доступна! Скрипт завершён."
+                    return # Завершаем выполнение функции при успешном подключении
+                } else {
+                    Write-Output "Не удалось подключиться к IP $ipForTesting, несмотря на состояние Reachable. Повторяю пинг..."
+                    # Выполняем Test-Connection для дальнейших попыток
+                    Test-Connection -ComputerName $ipForTesting -Count 1
+                }
+            }
+            else {
+                # Если состояние записи не Reachable (например, Stale), выполняем Test-Connection и повторяем попытку
+                Write-Output "Запись для MAC $macAddress не в состоянии Reachable. Пингуем IP $ipForTesting..."
+                Test-Connection -ComputerName $ipForTesting -Count 1
+            }
+        } else {
+            Write-Output "Запись для MAC $macAddress не найдена или была удалена из ARP-таблицы."
+            return # Завершаем выполнение, если запись в ARP-таблице не найдена
+        }
+
+        # Увеличиваем счетчик попыток
+        $attemptCount++
+        # Пауза перед следующей попыткой
+        Start-Sleep -Seconds 10
+    }
+
+    Write-Output "Максимальное количество попыток ($maxAttempts) достигнуто. Скрипт завершён."
 }
+
+
+
+
+# Запуск функции
+Test-ARPConnection -macAddress $macAddress
+
+
 
 # ping $ip_for_updating
 # arp -a
 
 # 100.66.72.97
+# ping /?
