@@ -5,7 +5,22 @@ k8s-worker2@192.168.56.52 k8s-worker2
 100.66.72.97 2Lapa
 
 
-ssh k8s-m@100.66.72.100 'bash -s' < ./switch_hostname.sh 
+ssh k8s-m@100.66.72.100 'bash -s' < ./switch_hostname.sh
+или 
+
+ssh k8s-worker1@192.168.56.51 'bash -s' <<EOF
+whoami
+echo -e "\n192.168.56.50 k8s-master\n192.168.56.51 k8s-worker1" | sudo tee -a /etc/hosts > /dev/null
+cat /etc/hosts
+EOF
+
+
+sudo -i
+
+
+ssh-keygen -t rsa -b 4096 -C "your_emai2l@example.com"
+
+ssh-copy-id k8s-master@192.168.56.50
 
 sudo visudo
 k8s-worker1 ALL=(ALL) NOPASSWD: ALL
@@ -33,3 +48,8 @@ VBoxManage list runningvms
 
 VBoxManage startvm "test" --type headless
 VBoxManage controlvm "Ubuntu_VM" poweroff
+for vm in $(VBoxManage list runningvms | awk '{print $1}' | tr -d '"'); do
+    VBoxManage controlvm $vm acpipowerbutton
+done
+
+

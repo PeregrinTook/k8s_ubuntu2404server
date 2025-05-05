@@ -5,14 +5,16 @@ $adapterInfo = Get-NetIPAddress -InterfaceAlias $adapterName -AddressFamily IPv4
 
 # Извлекаем IP и маску подсети
 $ip = $adapterInfo.IPAddress
-$subnetMask = $adapterInfo.PrefixLength
+$prefixLength = $adapterInfo.PrefixLength
 
 Write-Output "IP-адрес: $ip"
-Write-Output "Маска подсети: $subnetMask"
+Write-Output "Маска подсети: $prefixLength"
 
 # arp -a
 $macAddress = "8c-89-a5-0f-aa-19"
+ping 100.66.78.126
 
+# arp -a
 # Функция для проверки и пинга
 function Test-ARPConnection {
     param (
