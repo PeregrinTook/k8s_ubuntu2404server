@@ -53,3 +53,7 @@ for vm in $(VBoxManage list runningvms | awk '{print $1}' | tr -d '"'); do
 done
 
 
+
+
+sudo virsh console test-vm2
+noble-server-cloudimg-amd64.img

@@ -1,4 +1,5 @@
-﻿#!/bin/bash
+#!/bin/bash
+set -euo pipefail
 
 # ==== Входные данные ====
 VM_NAME=$1

@@ -1,15 +1,5 @@
 ﻿images/noble-server-cloudimg-amd64.img
 
-for_cloud/k8s-seed.iso
-for_cloud/k8s.qcow2
-for_cloud/k8s2-seed.iso
-for_cloud/k8s2.qcow2
-for_cloud/k8s3-seed.iso
-for_cloud/k8s3.qcow2
-for_cloud/k8s5-seed.iso
-for_cloud/k8s5.qcow2
-for_cloud/test-vm7-seed.iso
-for_cloud/test-vm8-seed.iso
-for_cloud/test-vm8.qcow2
+images/ubuntu-template.qcow2
+for_cloud/noble-server-cloudimg-amd64.img
 for_cloud/ubuntu-template.qcow2
-for_cloud/user-data
