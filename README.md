@@ -75,3 +75,14 @@ kubectl apply -f custom-resources.yaml
 
 echo "export KUBECONFIG=/etc/kubernetes/admin.conf" >> ~/.bashrc
 source ~/.bashrc
+
+sudo virt-install \
+  --name alpine-vm \
+  --memory 512 \
+  --vcpus 1 \
+  --disk path=/home/alexkol/alpine-vm.qcow2,size=2 \
+  --cdrom /home/alexkol/Downloads/alpine-standard-3.21.3-x86_64.iso \
+  --disk path=/home/alexkol/k8s_ubuntu2404server/alpine-answers.iso,device=cdrom,readonly=on \
+  --os-variant generic \
+  --network bridge=virbr0,model=virtio
+
