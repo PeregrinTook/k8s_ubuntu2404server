@@ -56,4 +56,13 @@ done
 
 
 sudo virsh console test-vm2
+sudo virsh list --all
+virsh shutdown <имя_вм>
+virsh destroy <имя_вм>
+virsh autostart <имя_вм>
+virsh suspend <имя_вм>
+virsh resume <имя_вм>
+virsh autostart --disable <имя_вм>
+
+
 noble-server-cloudimg-amd64.img
