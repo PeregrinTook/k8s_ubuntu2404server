@@ -58,7 +58,7 @@ done
 noble-server-cloudimg-amd64.img
 
 
-rm /home/alexkol/.ssh/known_hosts
+rm /home/alexkol/.ssh/known_hosts && \
 ./customized_script.sh k8s-master k8s ~/.ssh/id_rsa.pub 192.168.122.50 && \
 ./customized_script.sh k8s-worker1 k8s ~/.ssh/id_rsa.pub 192.168.122.51 && \
 ./customized_script.sh k8s-worker2 k8s ~/.ssh/id_rsa.pub 192.168.122.52

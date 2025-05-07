@@ -11,7 +11,7 @@ VCPUS=2
 DISK_SIZE=10  # в ГБ
 OS_VARIANT=ubuntu22.04
 
-TEMPLATE_IMG="/home/alexkol/k8s_ubuntu2404server/ubuntu-template.qcow2"
+TEMPLATE_IMG="/home/alexkol/k8s_ubuntu2404server/images/ubuntu-template.qcow2"
 
 # Проверка аргументов
 if [[ -z "$VM_NAME" || -z "$USERNAME" || -z "$PUBKEY_FILE" ]]; then
