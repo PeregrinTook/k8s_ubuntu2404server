@@ -11,6 +11,7 @@ virsh list --all              # Все ВМ
 
 ### ▶️ Запуск / ⏹️ Остановка / ❌ Удаление
 ```bash
+virsh console <vm-name>
 virsh start <vm-name>                         # Запуск
 virsh shutdown <vm-name>                      # Корректное выключение
 virsh destroy <vm-name>                       # Жёсткое выключение (как выдернуть вилку)

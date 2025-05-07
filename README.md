@@ -86,3 +86,7 @@ sudo virt-install \
   --os-variant generic \
   --network bridge=virbr0,model=virtio
 
+
+
+
+grep -q "SystemdCgroup = true" "/etc/containerd/config.toml"

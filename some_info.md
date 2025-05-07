@@ -1,8 +1,7 @@
-﻿k8s-master@192.168.56.50 k8s-master
-k8s-worker1@192.168.56.51 k8s-worker1
-k8s-worker2@192.168.56.52 k8s-worker2
+﻿k8s-master@192.168.56.50 k8s
+k8s-worker1@192.168.56.51 k8s
+k8s-worker2@192.168.56.52 k8s
 
-100.66.72.97 2Lapa
 
 
 ssh k8s-m@100.66.72.100 'bash -s' < ./switch_hostname.sh
@@ -55,14 +54,9 @@ done
 
 
 
-sudo virsh console test-vm2
-sudo virsh list --all
-virsh shutdown <имя_вм>
-virsh destroy <имя_вм>
-virsh autostart <имя_вм>
-virsh suspend <имя_вм>
-virsh resume <имя_вм>
-virsh autostart --disable <имя_вм>
-
 
 noble-server-cloudimg-amd64.img
+
+./customized_script.sh k8s-master k8s ~/.ssh/id_rsa.pub 192.168.122.50
+./customized_script.sh k8s-worker1 k8s ~/.ssh/id_rsa.pub 192.168.122.51
+./customized_script.sh k8s-worker2 k8s ~/.ssh/id_rsa.pub 192.168.122.52
