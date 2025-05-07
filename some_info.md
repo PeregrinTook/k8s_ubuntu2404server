@@ -1,6 +1,6 @@
-﻿k8s-master@192.168.56.50 k8s
-k8s-worker1@192.168.56.51 k8s
-k8s-worker2@192.168.56.52 k8s
+﻿k8s-master@192.168.122.50 k8s
+k8s-worker1@192.168.122.51 k8s
+k8s-worker2@192.168.122.52 k8s
 
 
 
@@ -57,6 +57,6 @@ done
 
 noble-server-cloudimg-amd64.img
 
-./customized_script.sh k8s-master k8s ~/.ssh/id_rsa.pub 192.168.122.50
-./customized_script.sh k8s-worker1 k8s ~/.ssh/id_rsa.pub 192.168.122.51
+./customized_script.sh k8s-master k8s ~/.ssh/id_rsa.pub 192.168.122.50 && \
+./customized_script.sh k8s-worker1 k8s ~/.ssh/id_rsa.pub 192.168.122.51 && \
 ./customized_script.sh k8s-worker2 k8s ~/.ssh/id_rsa.pub 192.168.122.52
