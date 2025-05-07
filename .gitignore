@@ -4,3 +4,4 @@ images/ubuntu-template.qcow2
 for_cloud/noble-server-cloudimg-amd64.img
 for_cloud/ubuntu-template.qcow2
 for_cloud/*
+ubuntu-template.qcow2

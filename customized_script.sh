@@ -11,7 +11,7 @@ VCPUS=2
 DISK_SIZE=10  # в ГБ
 OS_VARIANT=ubuntu22.04
 
-TEMPLATE_IMG="/home/alexkol/k8s_ubuntu2404server/for_cloud/ubuntu-template.qcow2"
+TEMPLATE_IMG="/home/alexkol/k8s_ubuntu2404server/ubuntu-template.qcow2"
 
 # Проверка аргументов
 if [[ -z "$VM_NAME" || -z "$USERNAME" || -z "$PUBKEY_FILE" ]]; then
@@ -76,28 +76,6 @@ runcmd:
   - usermod -aG docker $USERNAME
   - netplan apply
   - ip link set enp2s0 up
-  - echo '192.168.122.50 k8s-master' | sudo tee -a /etc/hosts
-  - echo '192.168.122.51 k8s-worker1' | sudo tee -a /etc/hosts
-  - echo '192.168.122.52 k8s-worker2' | sudo tee -a /etc/hosts
-  - sudo -i
-  - printf "overlay\nbr_netfilter\n" >> /etc/modules-load.d/containerd.conf
-  - modprobe overlay
-  - modprobe br_netfilter
-  - printf "net.bridge.bridge-nf-call-iptables = 1\nnet.ipv4.ip_forward = 1\nnet.bridge.bridge-nf-call-ip6tables = 1\n" >> /etc/sysctl.d/99-kubernetes-cri.conf
-  - sysctl --system
-  - wget https://github.com/containerd/containerd/releases/download/v2.0.5/containerd-2.0.5-linux-amd64.tar.gz -P /tmp/
-  - tar Cxzvf /usr/local /tmp/containerd-2.0.5-linux-amd64.tar.gz
-  - wget https://raw.githubusercontent.com/containerd/containerd/main/containerd.service -P /etc/systemd/system/
-  - systemctl daemon-reload
-  - systemctl enable --now containerd
-  - wget https://github.com/opencontainers/runc/releases/download/v1.3.0/runc.amd64 -P /tmp/
-  - install -m 755 /tmp/runc.amd64 /usr/local/sbin/runc
-  - wget https://github.com/containernetworking/plugins/releases/download/v1.7.1/cni-plugins-linux-amd64-v1.7.1.tgz -P /tmp/
-  - mkdir -p /opt/cni/bin
-  - tar Cxzvf /opt/cni/bin /tmp/cni-plugins-linux-amd64-v1.7.1.tgz
-  - mkdir -p /etc/containerd
-  - containerd config default | tee /etc/containerd/config.toml
-
 EOF
 
 cat > "$TMPDIR/meta-data" <<EOF

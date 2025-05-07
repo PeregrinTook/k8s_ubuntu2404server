@@ -1,0 +1,103 @@
+﻿---
+- name: Kubernetes Cluster Setup with Calico and Containerd
+  hosts: all
+  become: yes
+  vars:
+    kube_version: "1.27.0"
+    calico_version: "v3.26"
+    containerd_version: "2.0.5"
+    containerd_url: "https://github.com/containerd/containerd/releases/download/v{{ containerd_version }}/containerd-{{ containerd_version }}-linux-amd64.tar.gz"
+    containerd_version_check: "2.0.5"
+
+
+  tasks:
+    # 1. Install Required Packages
+    - name: Install Required Packages
+      apt:
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - gnupg
+          - lsb-release
+        state: present
+        update_cache: yes
+
+    # 2. Disable Swap
+    - name: Disable Swap
+      ansible.builtin.shell: "swapoff -a && sed -i '/ swap / s/^/#/' /etc/fstab"
+
+    # 3. Update /etc/hosts
+    - name: Add multiple hosts to /etc/hosts
+      ansible.builtin.blockinfile:
+        path: /etc/hosts
+        marker: "<!-- {mark} ANSIBLE MANAGED BLOCK -->"
+        block: |
+          192.168.122.50 k8s-master
+          192.168.122.51 k8s-worker1
+          192.168.122.52 k8s-worker2
+        state: present
+        backup: yes
+
+    # 4. Setup containerd modules
+    - name: Ensure containerd.conf file exists
+      ansible.builtin.file:
+        path: /etc/modules-load.d/containerd.conf
+        state: touch
+        mode: '0644'
+
+    - name: Add modules to containerd.conf
+      ansible.builtin.lineinfile:
+        path: /etc/modules-load.d/containerd.conf
+        line: "{{ item }}"
+        state: present
+      loop:
+        - "overlay"
+        - "br_netfilter"
+
+    # 5. Setup sysctl for Kubernetes
+    - name: Ensure 99-kubernetes-cri.conf file exists
+      ansible.builtin.file:
+        path: /etc/sysctl.d/99-kubernetes-cri.conf
+        state: touch
+        mode: '0644'
+
+    - name: Add sysctl settings for Kubernetes
+      ansible.builtin.lineinfile:
+        path: /etc/sysctl.d/99-kubernetes-cri.conf
+        line: "{{ item }}"
+        state: present
+      loop:
+        - "net.bridge.bridge-nf-call-iptables = 1"
+        - "net.ipv4.ip_forward = 1"
+        - "net.bridge.bridge-nf-call-ip6tables = 1"
+
+    - name: Apply sysctl settings
+      ansible.builtin.shell: sysctl --system
+
+    # 6. Install Containerd
+    
+    - name: Download Containerd archive
+      ansible.builtin.get_url:
+        url: "{{ containerd_url }}"
+        dest: "/tmp/containerd-{{ containerd_version }}-linux-amd64.tar.gz"
+        mode: '0644'
+
+    - name: Extract Containerd archive
+      ansible.builtin.unarchive:
+        src: "/tmp/containerd-{{ containerd_version }}-linux-amd64.tar.gz"
+        dest: "/tmp/"
+        remote_src: yes
+    - name: Extract Containerd archive
+      ansible.builtin.command:
+        cmd: tar Cxzvf /usr/local /tmp/containerd-{{ containerd_version }}-linux-amd64.tar.gz
+      become: yes
+    - name: Get Containerd version
+      ansible.builtin.command:
+        cmd: containerd --version
+      register: containerd_version_output
+
+
+    - name: Print Containerd version
+      debug:
+        msg: "Containerd installed: {{ containerd_version_output.stdout }}"
