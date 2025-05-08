@@ -63,7 +63,7 @@ rm /home/alexkol/.ssh/known_hosts && \
 ./customized_script.sh k8s-worker1 k8s ~/.ssh/id_rsa.pub 192.168.100.51 && \
 ./customized_script.sh k8s-worker2 k8s ~/.ssh/id_rsa.pub 192.168.100.52
 
-ssh k8s@192.168.122.50
+ssh k8s@192.168.100.50
 
 
 python3 -m venv ansible-venv

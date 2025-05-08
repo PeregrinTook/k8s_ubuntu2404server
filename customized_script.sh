@@ -44,7 +44,7 @@ users:
 
 write_files:
   - path: /etc/netplan/01-netcfg.yaml
-    permissions: '0644'
+    permissions: '0600'
     content: |
       network:
         version: 2
@@ -55,10 +55,8 @@ write_files:
           enp2s0:
             dhcp4: false
             addresses: [$STATIC_IP/24]
-            nameservers:
-              addresses: [8.8.8.8, 8.8.4.4]
             routes:
-              - to: default
+              - to: 192.168.100.0/24
                 via: 192.168.100.1
   - path: /etc/cloud/cloud.cfg.d/99-disable-network-config.cfg
     permissions: '0644'
