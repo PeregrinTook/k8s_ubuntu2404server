@@ -88,5 +88,5 @@ sudo virt-install \
 
 
 
-
+systemctl --failed
 grep -q "SystemdCgroup = true" "/etc/containerd/config.toml"

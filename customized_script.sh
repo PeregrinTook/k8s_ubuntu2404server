@@ -60,6 +60,10 @@ write_files:
             routes:
               - to: default
                 via: 192.168.100.1
+  - path: /etc/cloud/cloud.cfg.d/99-disable-network-config.cfg
+    permissions: '0644'
+    content: |
+      network: {config: disabled}
 
 
 package_update: true

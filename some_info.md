@@ -59,8 +59,16 @@ noble-server-cloudimg-amd64.img
 
 
 rm /home/alexkol/.ssh/known_hosts && \
-./customized_script.sh k8s-master k8s ~/.ssh/id_rsa.pub 192.168.122.50 && \
-./customized_script.sh k8s-worker1 k8s ~/.ssh/id_rsa.pub 192.168.122.51 && \
-./customized_script.sh k8s-worker2 k8s ~/.ssh/id_rsa.pub 192.168.122.52
+./customized_script.sh k8s-master k8s ~/.ssh/id_rsa.pub 192.168.100.50 && \
+./customized_script.sh k8s-worker1 k8s ~/.ssh/id_rsa.pub 192.168.100.51 && \
+./customized_script.sh k8s-worker2 k8s ~/.ssh/id_rsa.pub 192.168.100.52
 
 ssh k8s@192.168.122.50
+
+
+python3 -m venv ansible-venv
+
+source ~/ansible-venv/bin/activate
+
+
+root@k8s-master:~# systemctl --failed

@@ -2,7 +2,7 @@
   children:
     master:
       hosts:
-        192.168.122.50:
+        192.168.100.50:
           ansible_user: k8s
           ansible_become: yes
           ansible_python_interpreter: /usr/bin/python3
@@ -10,12 +10,12 @@
     
     workers:
       hosts:
-        192.168.122.51:
+        192.168.100.51:
           ansible_user: k8s
           ansible_become: yes
           ansible_python_interpreter: /usr/bin/python3
           ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
-        192.168.122.52:
+        192.168.100.52:
           ansible_user: k8s
           ansible_become: yes
           ansible_python_interpreter: /usr/bin/python3
