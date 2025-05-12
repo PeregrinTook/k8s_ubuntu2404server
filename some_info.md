@@ -72,3 +72,6 @@ source ~/ansible-venv/bin/activate
 
 
 root@k8s-master:~# systemctl --failed
+
+
+ansible-playbook -i ansible/inventory.yml ansible/k8s_cluster_with_calico.yml
