@@ -5,3 +5,8 @@ for_cloud/noble-server-cloudimg-amd64.img
 for_cloud/ubuntu-template.qcow2
 for_cloud/*
 ubuntu-template.qcow2
+teraform/.terraform/providers/registry.terraform.io/dmacvicar/libvirt/0.8.3/linux_amd64/CHANGELOG.md
+teraform/.terraform/providers/registry.terraform.io/dmacvicar/libvirt/0.8.3/linux_amd64/LICENSE
+teraform/.terraform/providers/registry.terraform.io/dmacvicar/libvirt/0.8.3/linux_amd64/README.md
+teraform/.terraform/providers/registry.terraform.io/dmacvicar/libvirt/0.8.3/linux_amd64/terraform-provider-libvirt_v0.8.3
+teraform/.terraform.lock.hcl
