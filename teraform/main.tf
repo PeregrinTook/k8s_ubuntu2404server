@@ -19,27 +19,27 @@ resource "libvirt_network" "vm_net" {
 }
 
 # Ресурс для хранения данных виртуальной машины
-resource "libvirt_pool" "accessible_pool" {
-  name = "accessible_pool"
-  type = "dir"
+# resource "libvirt_pool" "accessible_pool" {
+#   name = "default"
+#   type = "dir"
 
-  target {
-    path = "/var/lib/libvirt/accessible_images"
-  }
-}
+#   target {
+#     path = "/var/lib/libvirt/images/"
+#   }
+# }
 
 # Диск виртуальной машины
 resource "libvirt_volume" "ubuntu_disk" {
   name   = "ubuntu_vm_disk.qcow2"
-  pool   = libvirt_pool.accessible_pool.name
+  pool   = "default"
+  source = "/home/alexkol/k8s_ubuntu2404server/images/ubuntu-template.qcow2"
   format = "qcow2"
-  size   = 10 # Размер диска в GB, можно подкорректировать
 }
 
 # Ресурс Cloud-init диск
 resource "libvirt_cloudinit_disk" "ubuntu_init" {
   name      = "ubuntu-init.iso"
-  pool      = libvirt_pool.accessible_pool.name
+  pool      = "default"  # Используем уже существующий default pool
   user_data = <<EOF
 #cloud-config
 users:
@@ -49,8 +49,11 @@ users:
     ssh_authorized_keys:
       - ${file("/home/alexkol/.ssh/id_rsa.pub")}
 EOF
-  depends_on = [libvirt_pool.accessible_pool]
+  lifecycle {
+    create_before_destroy = true
+  }
 }
+
 
 # Виртуальная машина
 resource "libvirt_domain" "ubuntu_vm" {

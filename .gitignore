@@ -10,3 +10,5 @@ teraform/.terraform/providers/registry.terraform.io/dmacvicar/libvirt/0.8.3/linu
 teraform/.terraform/providers/registry.terraform.io/dmacvicar/libvirt/0.8.3/linux_amd64/README.md
 teraform/.terraform/providers/registry.terraform.io/dmacvicar/libvirt/0.8.3/linux_amd64/terraform-provider-libvirt_v0.8.3
 teraform/.terraform.lock.hcl
+teraform/terraform.tfstate
+teraform/terraform.tfstate.backup
