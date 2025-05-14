@@ -12,3 +12,4 @@ teraform/.terraform/providers/registry.terraform.io/dmacvicar/libvirt/0.8.3/linu
 teraform/.terraform.lock.hcl
 teraform/terraform.tfstate
 teraform/terraform.tfstate.backup
+teraform/.terraform/providers/registry.terraform.io/hashicorp/template/2.2.0/linux_amd64/terraform-provider-template_v2.2.0_x4
