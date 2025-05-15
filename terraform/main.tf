@@ -1,6 +1,22 @@
 provider "libvirt" {
   uri = "qemu:///system"
 }
+resource "libvirt_pool" "k8s_vms_pool" {
+  name = "for_k8s_vms"
+  type = "dir"
+
+  target {
+    path = "/home/alexkol/k8s_ubuntu2404server/for_k8s_vms/"
+  }
+}
+
+# resource "null_resource" "start_pool" {
+#   provisioner "local-exec" {
+#     command = "virsh pool-start for_k8s_vms"
+#   }
+#   depends_on = [libvirt_pool.k8s_vms_pool]
+# }
+
 
 resource "libvirt_network" "vm_net" {
   name      = "vm_open_k8s"
@@ -16,9 +32,10 @@ resource "libvirt_volume" "ubuntu_disk" {
   name = "${each.value.name}_disk.qcow2"
   # pool = "default"
   source = "/home/alexkol/k8s_ubuntu2404server/images/ubuntu-template.qcow2"
-  pool   = "for_k8s_vms"
+  pool   = libvirt_pool.k8s_vms_pool.name
   format = "qcow2"
   # size   = 10 * 1024 * 1024 * 1024
+  depends_on = [libvirt_pool.k8s_vms_pool]
 }
 
 resource "libvirt_cloudinit_disk" "ubuntu_init" {
@@ -26,15 +43,17 @@ resource "libvirt_cloudinit_disk" "ubuntu_init" {
 
   name = "ubuntu-init-${each.key}-${timestamp()}.iso"
   # pool = "default"
-  pool = "for_k8s_vms"
+  pool = libvirt_pool.k8s_vms_pool.name
   user_data = templatefile("${path.module}/${each.value.config_path}/cloud_init.yml", {
-    ssh_key = file(var.ssh_key_path)
+    ssh_key  = file(var.ssh_key_path),
+    hostname = each.value.hostname
   })
   network_config = file("${path.module}/${each.value.config_path}/network_config.yml")
 
   lifecycle {
     create_before_destroy = true
   }
+  depends_on = [libvirt_pool.k8s_vms_pool]
 }
 
 resource "libvirt_domain" "ubuntu_vm" {
@@ -63,7 +82,8 @@ resource "libvirt_domain" "ubuntu_vm" {
     volume_id = libvirt_volume.ubuntu_disk[each.key].id
   }
 
-  cloudinit = libvirt_cloudinit_disk.ubuntu_init[each.key].id
+  cloudinit  = libvirt_cloudinit_disk.ubuntu_init[each.key].id
+  depends_on = [libvirt_pool.k8s_vms_pool]
 }
 resource "local_file" "ansible_inventory" {
   filename = "${path.module}/ansible/inventory.yml"

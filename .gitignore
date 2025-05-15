@@ -11,4 +11,5 @@ terraform/terraform.tfstate
 terraform/terraform.tfstate.backup
 terraform/.terraform.lock.hcl
 */for_k8s_vms/
+for_k8s_vms/
 

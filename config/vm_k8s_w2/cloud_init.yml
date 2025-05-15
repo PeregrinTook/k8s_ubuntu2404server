@@ -18,7 +18,8 @@ write_files:
     permissions: '0644'
     content: |
       Welcome to your Ubuntu server!
-
+hostname: ${hostname}
+manage_etc_hosts: true
 runcmd:
   - 
   - echo "Initial server setup complete!"

@@ -19,6 +19,9 @@ write_files:
     content: |
       Welcome to your Ubuntu server!
 
+hostname: ${hostname}
+manage_etc_hosts: true
+
 runcmd:
   - echo "Initial server setup complete!"
   - systemctl restart ssh

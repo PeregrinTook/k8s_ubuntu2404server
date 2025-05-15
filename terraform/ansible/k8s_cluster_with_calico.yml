@@ -44,9 +44,9 @@
         path: /etc/hosts
         marker: "#<!-- {mark} ANSIBLE MANAGED BLOCK -->"
         block: |
-          192.168.122.50 k8s-m
-          192.168.122.51 k8s-w1
-          192.168.122.52 k8s-w2
+          192.168.100.50 k8s-m
+          192.168.100.51 k8s-w1
+          192.168.100.52 k8s-w2
         state: present
         backup: yes
 
@@ -253,7 +253,13 @@
         path: /root/.bashrc
         line: "export KUBECONFIG=/etc/kubernetes/admin.conf"
         create: yes
-
+    - name: Create KUBECONFIG script in /etc/profile.d
+      ansible.builtin.copy:
+        dest: /etc/profile.d/kubeconfig.sh
+        content: |
+          #!/bin/bash
+          export KUBECONFIG=/etc/kubernetes/admin.conf
+        mode: 0755
     - name: Show kubeadm init output
       ansible.builtin.debug:
         msg: "{{ kubeadm_init_output.stdout }}"
