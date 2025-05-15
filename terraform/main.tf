@@ -7,22 +7,26 @@ resource "libvirt_network" "vm_net" {
   mode      = "open"
   domain    = "internal_k8s"
   addresses = ["192.168.100.0/24"]
+  autostart = true
 }
 
 resource "libvirt_volume" "ubuntu_disk" {
   for_each = { for vm in var.vms : vm.name => vm }
 
-  name   = "${each.value.name}_disk.qcow2"
-  pool   = "default"
+  name = "${each.value.name}_disk.qcow2"
+  # pool = "default"
   source = "/home/alexkol/k8s_ubuntu2404server/images/ubuntu-template.qcow2"
+  pool   = "for_k8s_vms"
   format = "qcow2"
+  # size   = 10 * 1024 * 1024 * 1024
 }
 
 resource "libvirt_cloudinit_disk" "ubuntu_init" {
   for_each = { for vm in var.vms : vm.name => vm }
 
   name = "ubuntu-init-${each.key}-${timestamp()}.iso"
-  pool = "default"
+  # pool = "default"
+  pool = "for_k8s_vms"
   user_data = templatefile("${path.module}/${each.value.config_path}/cloud_init.yml", {
     ssh_key = file(var.ssh_key_path)
   })
@@ -61,6 +65,15 @@ resource "libvirt_domain" "ubuntu_vm" {
 
   cloudinit = libvirt_cloudinit_disk.ubuntu_init[each.key].id
 }
+resource "local_file" "ansible_inventory" {
+  filename = "${path.module}/ansible/inventory.yml"
+  content = templatefile("${path.module}/ansible/inventory_template.yml.tpl", {
+    master_ip  = var.vms[0].ip_inner,
+    worker_ips = slice([for vm in var.vms : vm.ip_inner], 1, length(var.vms))
+  })
+  depends_on = [libvirt_domain.ubuntu_vm]
+}
+
 
 
 

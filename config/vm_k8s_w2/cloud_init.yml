@@ -1,6 +1,7 @@
 ﻿#cloud-config
+
 users:
-  - name: k8s-w2
+  - name: k8s
     sudo: ALL=(ALL) NOPASSWD:ALL
     groups: sudo, admin
     shell: /bin/bash
@@ -19,6 +20,7 @@ write_files:
       Welcome to your Ubuntu server!
 
 runcmd:
+  - 
   - echo "Initial server setup complete!"
   - systemctl restart ssh
 
