@@ -1,6 +1,6 @@
 ﻿#cloud-config
 users:
-  - name: ubuntu
+  - name: k8s-m
     sudo: ALL=(ALL) NOPASSWD:ALL
     groups: sudo, admin
     shell: /bin/bash
