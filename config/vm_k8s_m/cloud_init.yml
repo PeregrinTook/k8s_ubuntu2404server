@@ -12,6 +12,8 @@ users:
 
 ssh_pwauth: false
 disable_root: true
+manage_etc_hosts: false
+
 
 write_files:
   - path: /etc/motd
@@ -20,7 +22,9 @@ write_files:
       Welcome to your Ubuntu server!
 
 hostname: ${hostname}
-manage_etc_hosts: true
+
+package_update: true
+package_upgrade: true
 
 runcmd:
   - echo "Initial server setup complete!"

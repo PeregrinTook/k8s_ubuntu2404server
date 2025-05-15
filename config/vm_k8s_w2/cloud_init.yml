@@ -19,7 +19,11 @@ write_files:
     content: |
       Welcome to your Ubuntu server!
 hostname: ${hostname}
-manage_etc_hosts: true
+manage_etc_hosts: false
+
+package_update: true
+package_upgrade: true
+
 runcmd:
   - 
   - echo "Initial server setup complete!"
