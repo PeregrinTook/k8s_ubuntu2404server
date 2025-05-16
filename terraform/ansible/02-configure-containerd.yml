@@ -89,13 +89,24 @@
         src: "/tmp/containerd-{{ containerd_version }}-linux-amd64.tar.gz"
         dest: "/usr/local"  # Извлекаем сразу в целевую директорию
         remote_src: yes
-        extra_opts: ["--strip-components=1"]  # Пропускаем корневую папку в архиве
+        # extra_opts: ["--strip-components=1"]  # Пропускаем корневую папку в архиве
         owner: root
         group: root
         mode: '0755'
         creates: "/usr/local/bin/containerd"  # Проверка существования результата
       register: containerd_extract
       changed_when: containerd_extract.changed
+    # Диагностика: проверяем что распаковалось
+    - name: Check extracted files
+      ansible.builtin.command: ls -l /usr/local/bin/
+      register: ls_result
+      changed_when: false
+      ignore_errors: yes
+
+    - name: Debug extracted files
+      ansible.builtin.debug:
+        var: ls_result.stdout
+
     - name: Get Containerd version
       ansible.builtin.command:
         cmd: containerd --version
@@ -105,18 +116,61 @@
     - name: Print Containerd version
       debug:
         msg: "Containerd installed: {{ containerd_version_output.stdout }}"
-    # # 7. Install containerd.service
-    # - name: Download containerd systemd service file
-    #   ansible.builtin.get_url:
-    #     url: https://raw.githubusercontent.com/containerd/containerd/main/containerd.service
-    #     dest: /etc/systemd/system/containerd.service
-    #     mode: '0644'
+    # 7. Install containerd.service
+    - name: Ensure containerd systemd service is configured
+      ansible.builtin.copy:
+        dest: /etc/systemd/system/containerd.service
+        content: |
+          [Unit]
+          Description=containerd container runtime
+          Documentation=https://containerd.io
+          After=network.target dbus.service
 
-    # - name: Reload systemd manager configuration
-    #   ansible.builtin.shell: systemctl daemon-reload
+          [Service]
+          ExecStartPre=-/sbin/modprobe overlay
+          ExecStart=/usr/local/bin/containerd
 
-    # - name: Enable and start containerd service
-    #   ansible.builtin.systemd:
-    #     name: containerd
-    #     enabled: true
-    #     state: started
+          Type=notify
+          Delegate=yes
+          KillMode=process
+          Restart=always
+          RestartSec=5
+
+          # Having non-zero Limit*s causes performance problems due to accounting overhead
+          # in the kernel. We recommend using cgroups to do container-local accounting.
+          LimitNPROC=infinity
+          LimitCORE=infinity
+
+          # Comment TasksMax if your systemd version does not supports it.
+          # Only systemd 226 and above support this version.
+          TasksMax=infinity
+          OOMScoreAdjust=-999
+
+          [Install]
+          WantedBy=multi-user.target
+        owner: root
+        group: root
+        mode: '0644'
+      register: containerd_service
+      changed_when: containerd_service.changed
+      notify:
+        - Reload systemd
+        - Restart containerd
+  handlers:
+    - name: Reload systemd
+      ansible.builtin.systemd:
+        daemon_reload: yes
+      listen: "systemd reload"
+
+    - name: Restart containerd
+      ansible.builtin.systemd:
+        name: containerd
+        state: restarted
+      listen: "restart containerd"
+    - name: Ensure containerd service is enabled and running
+      ansible.builtin.systemd:
+        name: containerd
+        enabled: yes
+        state: started
+        masked: no
+      register: containerd_service_state
