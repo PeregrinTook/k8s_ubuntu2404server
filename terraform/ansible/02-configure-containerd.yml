@@ -7,26 +7,43 @@
 
   tasks:
     # 1.  Setup containerd modules
-    - name: Ensure containerd.conf file exists
-      ansible.builtin.file:
-        path: /etc/modules-load.d/containerd.conf
-        state: touch
+    - name: Ensure containerd.conf exists with correct content
+      ansible.builtin.copy:
+        dest: /etc/modules-load.d/containerd.conf
+        content: |
+          overlay
+          br_netfilter
+        owner: root
+        group: root
         mode: '0644'
+      register: containerd_conf
+      changed_when: containerd_conf.changed
 
-    - name: Add modules to containerd.conf
-      ansible.builtin.lineinfile:
-        path: /etc/modules-load.d/containerd.conf
-        line: "{{ item }}"
-        state: present
-      loop:
-        - "overlay"
-        - "br_netfilter"
-    # 5. Setup sysctl for Kubernetes
-    - name: Ensure 99-kubernetes-cri.conf file exists
-      ansible.builtin.file:
-        path: /etc/sysctl.d/99-kubernetes-cri.conf
-        state: touch
+    - name: Ensure containerd kernel modules are configured
+      ansible.builtin.copy:
+        dest: /etc/modules-load.d/containerd.conf
+        content: |
+          overlay
+          br_netfilter
+        owner: root
+        group: root
         mode: '0644'
+      register: modules_config
+      changed_when: modules_config.changed
+    # 5. Setup sysctl for Kubernetes
+    - name: Configure Kubernetes CRI sysctl parameters
+      ansible.builtin.copy:
+        dest: /etc/sysctl.d/99-kubernetes-cri.conf
+        content: |
+          # Kubernetes CRI requirements
+          net.bridge.bridge-nf-call-iptables = 1
+          net.ipv4.ip_forward = 1
+          net.bridge.bridge-nf-call-ip6tables = 1
+        owner: root
+        group: root
+        mode: '0644'
+      register: sysctl_config
+      changed_when: sysctl_config.changed
 
     - name: Add sysctl settings for Kubernetes
       ansible.builtin.lineinfile:
@@ -42,11 +59,12 @@
       ansible.builtin.shell: sysctl --system
     # 6. Install Containerd
     
-    - name: Download Containerd archive
+    - name: Download containerd
       ansible.builtin.get_url:
         url: "{{ containerd_url }}"
         dest: "/tmp/containerd-{{ containerd_version }}-linux-amd64.tar.gz"
         mode: '0644'
+        checksum: "sha256:{{ lookup('url', containerd_url_checksum).split()[0] }}"
 
     - name: Extract Containerd archive
       ansible.builtin.unarchive:
@@ -66,18 +84,18 @@
     - name: Print Containerd version
       debug:
         msg: "Containerd installed: {{ containerd_version_output.stdout }}"
-    # 7. Install containerd.service
-    - name: Download containerd systemd service file
-      ansible.builtin.get_url:
-        url: https://raw.githubusercontent.com/containerd/containerd/main/containerd.service
-        dest: /etc/systemd/system/containerd.service
-        mode: '0644'
+    # # 7. Install containerd.service
+    # - name: Download containerd systemd service file
+    #   ansible.builtin.get_url:
+    #     url: https://raw.githubusercontent.com/containerd/containerd/main/containerd.service
+    #     dest: /etc/systemd/system/containerd.service
+    #     mode: '0644'
 
-    - name: Reload systemd manager configuration
-      ansible.builtin.shell: systemctl daemon-reload
+    # - name: Reload systemd manager configuration
+    #   ansible.builtin.shell: systemctl daemon-reload
 
-    - name: Enable and start containerd service
-      ansible.builtin.systemd:
-        name: containerd
-        enabled: true
-        state: started
+    # - name: Enable and start containerd service
+    #   ansible.builtin.systemd:
+    #     name: containerd
+    #     enabled: true
+    #     state: started

@@ -23,11 +23,6 @@ calico_operator_url: "https://raw.githubusercontent.com/projectcalico/calico/{{ 
 calico_custom_resources_url: "https://raw.githubusercontent.com/projectcalico/calico/{{ calico_version }}/manifests/custom-resources.yaml"
 
 # Настройки для всех узлов
-common_packages:
-  - apt-transport-https
-  - curl
-  - ca-certificates
-  - gpg
 
 hosts_entries:
   - ip: 192.168.100.50
