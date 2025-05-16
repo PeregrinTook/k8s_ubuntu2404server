@@ -31,50 +31,71 @@
       register: modules_config
       changed_when: modules_config.changed
     # 5. Setup sysctl for Kubernetes
-    - name: Configure Kubernetes CRI sysctl parameters
-      ansible.builtin.copy:
-        dest: /etc/sysctl.d/99-kubernetes-cri.conf
-        content: |
-          # Kubernetes CRI requirements
+    - name: Configure Kubernetes CRI sysctl settings
+      ansible.builtin.blockinfile:
+        path: /etc/sysctl.d/99-kubernetes-cri.conf
+        marker: "# {mark} ANSIBLE MANAGED - KUBERNETES CRI"
+        block: |
           net.bridge.bridge-nf-call-iptables = 1
           net.ipv4.ip_forward = 1
           net.bridge.bridge-nf-call-ip6tables = 1
-        owner: root
-        group: root
+        create: yes
         mode: '0644'
       register: sysctl_config
       changed_when: sysctl_config.changed
 
-    - name: Add sysctl settings for Kubernetes
-      ansible.builtin.lineinfile:
-        path: /etc/sysctl.d/99-kubernetes-cri.conf
-        line: "{{ item }}"
-        state: present
-      loop:
-        - "net.bridge.bridge-nf-call-iptables = 1"
-        - "net.ipv4.ip_forward = 1"
-        - "net.bridge.bridge-nf-call-ip6tables = 1"
-
     - name: Apply sysctl settings
-      ansible.builtin.shell: sysctl --system
-    # 6. Install Containerd
+      ansible.builtin.command: sysctl --system
+      when: sysctl_config.changed
+      register: sysctl_apply
+      changed_when: "'applying' in sysctl_apply.stdout"
+
+    - name: Verify sysctl settings
+      ansible.builtin.shell: |
+        sysctl -n {{ item.key }} 2>/dev/null || echo "unavailable"
+      loop:
+        - { key: 'net.bridge.bridge-nf-call-iptables', expected: '1' }
+        - { key: 'net.ipv4.ip_forward', expected: '1' }
+        - { key: 'net.bridge.bridge-nf-call-ip6tables', expected: '1' }
+      register: sysctl_verify
+      changed_when: >
+        (sysctl_verify.stdout != item.expected) and
+        (sysctl_verify.stdout != 'unavailable')
+      failed_when: >
+        (sysctl_verify.stdout != item.expected) and
+        (sysctl_verify.stdout != 'unavailable')
+      ignore_errors: yes
+    # # 6. Install Containerd
     
-    - name: Download containerd
+    - name: Download containerd with checksum verification
       ansible.builtin.get_url:
         url: "{{ containerd_url }}"
         dest: "/tmp/containerd-{{ containerd_version }}-linux-amd64.tar.gz"
-        mode: '0644'
         checksum: "sha256:{{ lookup('url', containerd_url_checksum).split()[0] }}"
-
-    - name: Extract Containerd archive
+        mode: '0644'
+        timeout: 30
+        validate_certs: yes
+        owner: root
+        group: root
+      register: containerd_download
+      retries: 3
+      delay: 10
+      until: containerd_download is succeeded
+      changed_when: containerd_download.changed
+        
+# тут
+    - name: Extract Containerd archive to /usr/local
       ansible.builtin.unarchive:
         src: "/tmp/containerd-{{ containerd_version }}-linux-amd64.tar.gz"
-        dest: "/tmp/"
+        dest: "/usr/local"  # Извлекаем сразу в целевую директорию
         remote_src: yes
-    - name: Extract Containerd archive to /usr/local
-      ansible.builtin.command:
-        cmd: tar Cxzvf /usr/local /tmp/containerd-{{ containerd_version }}-linux-amd64.tar.gz
-      become: yes
+        extra_opts: ["--strip-components=1"]  # Пропускаем корневую папку в архиве
+        owner: root
+        group: root
+        mode: '0755'
+        creates: "/usr/local/bin/containerd"  # Проверка существования результата
+      register: containerd_extract
+      changed_when: containerd_extract.changed
     - name: Get Containerd version
       ansible.builtin.command:
         cmd: containerd --version
