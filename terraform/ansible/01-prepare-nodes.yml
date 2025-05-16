@@ -1,0 +1,89 @@
+﻿---
+- name: Prepare all nodes for Kubernetes cluster
+  hosts: all
+  become: yes
+  vars_files:
+    - vars.yml
+
+  tasks:
+    # Инициализация
+    - name: Wait for cloud-init to complete
+      ansible.builtin.command:
+        cmd: cloud-init status --wait
+      changed_when: false
+      tags: [init, bootstrap]
+
+    # Управление пакетами
+    - name: Update apt package index
+      ansible.builtin.apt:
+        update_cache: yes
+      changed_when: false
+      tags: [system_update]
+
+    - name: Install essential packages
+      ansible.builtin.apt:
+        name: "{{ common_system_packages }}"
+        state: present
+      register: pkg_install
+      retries: 3
+      delay: 10
+      changed_when: pkg_install.changed
+      tags: [packages]
+      
+    - name: Verify installed packages
+      ansible.builtin.command: dpkg -l "{{ item }}"
+      loop: "{{ common_system_packages }}"
+      changed_when: false
+      tags: [verify]
+
+    - name: Upgrade all packages
+      ansible.builtin.apt:
+        upgrade: dist
+      register: pkg_upgrade
+      environment:
+        DEBIAN_FRONTEND: noninteractive
+      changed_when: "'upgraded' in pkg_upgrade.stdout"
+      tags: [system_update, bootstrap]
+
+    - name: Clean package cache
+      ansible.builtin.apt:
+        autoclean: yes
+      register: cache_clean
+      changed_when: "'Cleaned' in cache_clean.stdout"
+      tags: [cleanup]
+
+    # Конфигурация системы
+    - name: Permanently disable swap
+      block:
+        - name: Check swap status
+          ansible.builtin.command: swapon --show
+          register: swap_status
+          changed_when: false
+          ignore_errors: yes
+        
+        - name: Disable active swap
+          ansible.builtin.command: swapoff -a
+          when: swap_status.stdout != ""
+        
+        - name: Disable swap in fstab
+          ansible.builtin.replace:
+            path: /etc/fstab
+            regexp: '^([^#].*\sswap\s.*)'
+            replace: '# \1'
+            backup: yes
+      tags: [system_config, bootstrap]
+
+    # Сетевая конфигурация
+    - name: Configure host entries
+      ansible.builtin.blockinfile:
+        path: /etc/hosts
+        marker: "# {mark} K8S CLUSTER NODES"
+        block: |
+          {% for entry in hosts_entries %}
+          {{ entry.ip }} {{ entry.hostname }} {{ entry.hostname.split('.')[0] }}
+          {% endfor %}
+        state: present
+        backup: yes
+      register: hosts_file
+      changed_when: hosts_file.changed
+      tags: [networking, bootstrap]

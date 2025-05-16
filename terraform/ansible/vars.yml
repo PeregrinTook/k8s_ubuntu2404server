@@ -1,0 +1,45 @@
+﻿---
+# Версии компонентов
+kube_version: "1.33.1"
+calico_version: "v3.30.0"
+containerd_version: "2.1.0"
+
+containerd_url: "https://github.com/containerd/containerd/releases/download/v{{ containerd_version }}/containerd-{{ containerd_version }}-linux-amd64.tar.gz"
+containerd_url_checksum: "https://github.com/containerd/containerd/releases/download/v{{ containerd_version }}/containerd-{{ containerd_version }}-linux-amd64.tar.gz.sha256sum"
+
+# Сети
+pod_network_cidr: "192.168.0.0/16"
+service_cidr: "10.96.0.0/12"
+
+# Настройки kubeadm
+kubeadm_init_command: |
+  kubeadm init \
+  --pod-network-cidr {{ pod_network_cidr }} \
+  --kubernetes-version {{ kube_version }} \
+  --node-name {{ inventory_hostname }}
+
+# URLs
+calico_operator_url: "https://raw.githubusercontent.com/projectcalico/calico/{{ calico_version }}/manifests/tigera-operator.yaml"
+calico_custom_resources_url: "https://raw.githubusercontent.com/projectcalico/calico/{{ calico_version }}/manifests/custom-resources.yaml"
+
+# Настройки для всех узлов
+common_packages:
+  - apt-transport-https
+  - curl
+  - ca-certificates
+  - gpg
+
+hosts_entries:
+  - ip: 192.168.100.50
+    hostname: k8s-m
+  - ip: 192.168.100.51
+    hostname: k8s-w1
+  - ip: 192.168.100.52
+    hostname: k8s-w2
+
+common_system_packages:
+  - apt-transport-https
+  - curl
+  - ca-certificates
+  - gpg
+  - software-properties-common
