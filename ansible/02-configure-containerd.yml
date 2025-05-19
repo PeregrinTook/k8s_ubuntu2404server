@@ -275,6 +275,53 @@
       changed_when: config_toml_edited.changed
       notify: Restart containerd
 
+    # 11 Gpg keys download 
+    - name: Ensure GPG key directory exists
+      ansible.builtin.file:
+        path: /etc/apt/keyrings
+        state: directory
+        mode: '0755'
+        owner: root
+        group: root
+
+    - name: Download Kubernetes GPG key
+      ansible.builtin.shell: |
+        curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.31/deb/Release.key | \
+        gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+      args:
+        creates: /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+      register: key_download
+      changed_when: key_download.changed
+
+    - name: Add Kubernetes APT repository
+      ansible.builtin.apt_repository:
+        repo: 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.31/deb/ /'
+        state: present
+        filename: kubernetes.list
+        update_cache: no
+      when: key_download.changed
+
+    - name: Update APT package list
+      ansible.builtin.apt:
+        update_cache: yes
+        cache_valid_time: 3600
+      register: apt_update
+
+    - name: Upgrade all packages
+      ansible.builtin.apt:
+        upgrade: dist
+        autoremove: yes
+      register: package_upgrades
+      notify:
+        - Reboot system if required
+        - restart containerd
+
+    - name: Check if reboot required
+      ansible.builtin.stat:
+        path: /var/run/reboot-required
+      register: reboot_required_file
+      when: package_upgrades.changed
+
   handlers:
     - name: Reload systemd
       ansible.builtin.systemd:
@@ -285,6 +332,8 @@
       ansible.builtin.systemd:
         name: containerd
         state: restarted
+        enabled: yes
+        daemon_reload: yes
       listen: "restart containerd"
 
     - name: Ensure containerd service is enabled and running
@@ -294,3 +343,11 @@
         state: started
         masked: false
       register: containerd_service_state
+
+    - name: Reboot system if required
+      ansible.builtin.reboot:
+        msg: "Rebooting the server after updates"
+        connect_timeout: 5
+        reboot_timeout: 600
+        pre_reboot_delay: 10
+      when: package_upgrades.changed or reboot_required_file.stat.exists
