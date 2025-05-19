@@ -284,21 +284,21 @@
         owner: root
         group: root
 
-    - name: Download Kubernetes GPG key
+    - name: Download Kubernetes GPG key (MAJOR version - v1.33)
       ansible.builtin.shell: |
-        curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.31/deb/Release.key | \
-        gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+        curl -fsSL "https://pkgs.k8s.io/core:/stable:/v{{ kube_version_major }}/deb/Release.key" | \
+        gpg --batch --yes --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
       args:
         creates: /etc/apt/keyrings/kubernetes-apt-keyring.gpg
       register: key_download
       changed_when: key_download.changed
 
-    - name: Add Kubernetes APT repository
+    - name: Add Kubernetes APT repository (MAJOR version - v1.33)
       ansible.builtin.apt_repository:
-        repo: 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.31/deb/ /'
+        repo: "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v{{ kube_version_major }}/deb/ /"
         state: present
         filename: kubernetes.list
-        update_cache: no
+        update_cache: yes
       when: key_download.changed
 
     - name: Update APT package list
@@ -321,6 +321,22 @@
         path: /var/run/reboot-required
       register: reboot_required_file
       when: package_upgrades.changed
+
+    - name: Install specific versions of Kubernetes components
+      ansible.builtin.apt:
+        name:
+          - "kubelet={{ kube_version }}-1.1"
+          - "kubeadm={{ kube_version }}-1.1"
+          - "kubectl={{ kube_version }}-1.1"
+        state: present
+        force_apt_get: yes
+        allow_downgrade: no
+      register: kube_pkgs_installed
+
+    - name: Mark Kubernetes packages on hold (if installed/changed)
+      ansible.builtin.command:
+        cmd: apt-mark hold kubelet kubeadm kubectl
+      when: kube_pkgs_installed.changed
 
   handlers:
     - name: Reload systemd
