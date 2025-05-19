@@ -1,7 +1,7 @@
 ﻿---
 - name: Configure containerd runtime
   hosts: all
-  become: yes
+  become: true
   vars_files:
     - vars.yml
 
@@ -39,7 +39,7 @@
           net.bridge.bridge-nf-call-iptables = 1
           net.ipv4.ip_forward = 1
           net.bridge.bridge-nf-call-ip6tables = 1
-        create: yes
+        create: true
         mode: '0644'
       register: sysctl_config
       changed_when: sysctl_config.changed
@@ -54,9 +54,9 @@
       ansible.builtin.shell: |
         sysctl -n {{ item.key }} 2>/dev/null || echo "unavailable"
       loop:
-        - { key: 'net.bridge.bridge-nf-call-iptables', expected: '1' }
-        - { key: 'net.ipv4.ip_forward', expected: '1' }
-        - { key: 'net.bridge.bridge-nf-call-ip6tables', expected: '1' }
+        - {key: 'net.bridge.bridge-nf-call-iptables', expected: '1'}
+        - {key: 'net.ipv4.ip_forward', expected: '1'}
+        - {key: 'net.bridge.bridge-nf-call-ip6tables', expected: '1'}
       register: sysctl_verify
       changed_when: >
         (sysctl_verify.stdout != item.expected) and
@@ -64,9 +64,9 @@
       failed_when: >
         (sysctl_verify.stdout != item.expected) and
         (sysctl_verify.stdout != 'unavailable')
-      ignore_errors: yes
-    # # 6. Install Containerd
-    
+      ignore_errors: true
+
+    # 6. Install Containerd
     - name: Download containerd with checksum verification
       ansible.builtin.get_url:
         url: "{{ containerd_url }}"
@@ -74,7 +74,7 @@
         checksum: "sha256:{{ lookup('url', containerd_url_checksum).split()[0] }}"
         mode: '0644'
         timeout: 30
-        validate_certs: yes
+        validate_certs: true
         owner: root
         group: root
       register: containerd_download
@@ -82,25 +82,24 @@
       delay: 10
       until: containerd_download is succeeded
       changed_when: containerd_download.changed
-        
+
     - name: Extract Containerd archive to /usr/local
       ansible.builtin.unarchive:
         src: "/tmp/containerd-{{ containerd_version }}-linux-amd64.tar.gz"
         dest: "/usr/local"
-        remote_src: yes
-        # extra_opts: ["--strip-components=1"]  # Пропускаем корневую папку в архиве
+        remote_src: true
         owner: root
         group: root
         mode: '0755'
         creates: "/usr/local/bin/containerd"
       register: containerd_extract
       changed_when: containerd_extract.changed
-      
+
     - name: Check extracted files
       ansible.builtin.command: ls -l /usr/local/bin/
       register: ls_result
       changed_when: false
-      ignore_errors: yes
+      ignore_errors: true
 
     - name: Debug extracted files
       ansible.builtin.debug:
@@ -136,13 +135,9 @@
           Restart=always
           RestartSec=5
 
-          # Having non-zero Limit*s causes performance problems due to accounting overhead
-          # in the kernel. We recommend using cgroups to do container-local accounting.
           LimitNPROC=infinity
           LimitCORE=infinity
 
-          # Comment TasksMax if your systemd version does not supports it.
-          # Only systemd 226 and above support this version.
           TasksMax=infinity
           OOMScoreAdjust=-999
 
@@ -156,13 +151,12 @@
       notify:
         - Reload systemd
         - Restart containerd
-      # 8. Install runc
+
+    # 8. Install runc
     - name: Install GPG prerequisites
       ansible.builtin.package:
         name: gnupg
         state: present
-      tags:
-        - now
 
     - name: Download runc binary
       ansible.builtin.get_url:
@@ -170,8 +164,6 @@
         dest: "/tmp/runc.amd64"
         mode: '0755'
       register: download_runc
-      tags:
-        - now
 
     - name: Download signature file
       ansible.builtin.get_url:
@@ -179,8 +171,6 @@
         dest: "/tmp/runc.amd64.asc"
         mode: '0644'
       when: download_runc.changed
-      tags:
-        - now
 
     - name: Import PGP key
       ansible.builtin.command: >
@@ -188,8 +178,6 @@
         --recv-keys {{ runc.pgp.key_id }}
       register: import_key
       changed_when: "'imported' in import_key.stdout or 'already' in import_key.stderr"
-      tags:
-        - now
 
     - name: Verify key fingerprint
       ansible.builtin.command: >
@@ -198,8 +186,6 @@
       changed_when: false
       failed_when: >
         runc.pgp.expected_fingerprint.replace(' ', '') not in key_check.stdout.replace(' ', '')
-      tags:
-        - now
 
     - name: Verify runc signature
       ansible.builtin.command: >
@@ -210,8 +196,6 @@
         sig_verify.rc != 0 or
         'GOODSIG ' + runc.pgp.key_id not in sig_verify.stdout or
         'VALIDSIG ' + runc.pgp.expected_fingerprint.replace(" ", "") not in sig_verify.stdout
-      tags:
-        - now
 
     - name: Install verified runc
       ansible.builtin.copy:
@@ -220,15 +204,13 @@
         owner: root
         group: root
         mode: '0755'
-        remote_src: yes
+        remote_src: true
       when: sig_verify is succeeded
-      tags:
-        - now
 
   handlers:
     - name: Reload systemd
       ansible.builtin.systemd:
-        daemon_reload: yes
+        daemon_reload: true
       listen: "systemd reload"
 
     - name: Restart containerd
@@ -239,8 +221,7 @@
     - name: Ensure containerd service is enabled and running
       ansible.builtin.systemd:
         name: containerd
-        enabled: yes
+        enabled: true
         state: started
-        masked: no
+        masked: false
       register: containerd_service_state
-

@@ -1,7 +1,7 @@
 ﻿---
 - name: Prepare all nodes for Kubernetes cluster
   hosts: all
-  become: yes
+  become: true
   vars_files:
     - vars.yml
 
@@ -16,7 +16,7 @@
     # Управление пакетами
     - name: Update apt package index
       ansible.builtin.apt:
-        update_cache: yes
+        update_cache: true
       changed_when: false
       tags: [system_update]
 
@@ -29,7 +29,7 @@
       delay: 10
       changed_when: pkg_install.changed
       tags: [packages]
-      
+
     - name: Verify installed packages
       ansible.builtin.command: dpkg -l "{{ item }}"
       loop: "{{ common_system_packages }}"
@@ -47,7 +47,7 @@
 
     - name: Clean package cache
       ansible.builtin.apt:
-        autoclean: yes
+        autoclean: true
       register: cache_clean
       changed_when: "'Cleaned' in cache_clean.stdout"
       tags: [cleanup]
@@ -59,18 +59,18 @@
           ansible.builtin.command: swapon --show
           register: swap_status
           changed_when: false
-          ignore_errors: yes
-        
+          ignore_errors: true
+
         - name: Disable active swap
           ansible.builtin.command: swapoff -a
           when: swap_status.stdout != ""
-        
+
         - name: Disable swap in fstab
           ansible.builtin.replace:
             path: /etc/fstab
             regexp: '^([^#].*\sswap\s.*)'
             replace: '# \1'
-            backup: yes
+            backup: true
       tags: [system_config, bootstrap]
 
     # Сетевая конфигурация
@@ -83,7 +83,7 @@
           {{ entry.ip }} {{ entry.hostname }} {{ entry.hostname.split('.')[0] }}
           {% endfor %}
         state: present
-        backup: yes
+        backup: true
       register: hosts_file
       changed_when: hosts_file.changed
       tags: [networking, bootstrap]
