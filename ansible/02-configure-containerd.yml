@@ -83,7 +83,6 @@
       until: containerd_download is succeeded
       changed_when: containerd_download.changed
         
-# тут
     - name: Extract Containerd archive to /usr/local
       ansible.builtin.unarchive:
         src: "/tmp/containerd-{{ containerd_version }}-linux-amd64.tar.gz"
@@ -111,6 +110,7 @@
       ansible.builtin.command:
         cmd: containerd --version
       register: containerd_version_output
+      changed_when: false
 
 
     - name: Print Containerd version
@@ -156,6 +156,75 @@
       notify:
         - Reload systemd
         - Restart containerd
+      # 8. Install runc
+    - name: Install GPG prerequisites
+      ansible.builtin.package:
+        name: gnupg
+        state: present
+      tags:
+        - now
+
+    - name: Download runc binary
+      ansible.builtin.get_url:
+        url: "{{ runc_url }}"
+        dest: "/tmp/runc.amd64"
+        mode: '0755'
+      register: download_runc
+      tags:
+        - now
+
+    - name: Download signature file
+      ansible.builtin.get_url:
+        url: "{{ runc_asc }}"
+        dest: "/tmp/runc.amd64.asc"
+        mode: '0644'
+      when: download_runc.changed
+      tags:
+        - now
+
+    - name: Import PGP key
+      ansible.builtin.command: >
+        gpg --keyserver hkps://keyserver.ubuntu.com
+        --recv-keys {{ runc.pgp.key_id }}
+      register: import_key
+      changed_when: "'imported' in import_key.stdout or 'already' in import_key.stderr"
+      tags:
+        - now
+
+    - name: Verify key fingerprint
+      ansible.builtin.command: >
+        gpg --fingerprint {{ runc.pgp.key_id }}
+      register: key_check
+      changed_when: false
+      failed_when: >
+        runc.pgp.expected_fingerprint.replace(' ', '') not in key_check.stdout.replace(' ', '')
+      tags:
+        - now
+
+    - name: Verify runc signature
+      ansible.builtin.command: >
+        gpg --status-fd 1 --verify /tmp/runc.amd64.asc /tmp/runc.amd64
+      register: sig_verify
+      changed_when: false
+      failed_when: >
+        sig_verify.rc != 0 or
+        'GOODSIG ' + runc.pgp.key_id not in sig_verify.stdout or
+        'VALIDSIG ' + runc.pgp.expected_fingerprint.replace(" ", "") not in sig_verify.stdout
+      tags:
+        - now
+
+    - name: Install verified runc
+      ansible.builtin.copy:
+        src: "/tmp/runc.amd64"
+        dest: "/usr/local/sbin/runc"
+        owner: root
+        group: root
+        mode: '0755'
+        remote_src: yes
+      when: sig_verify is succeeded
+      tags:
+        - now
+
   handlers:
     - name: Reload systemd
       ansible.builtin.systemd:
@@ -174,3 +243,4 @@
         state: started
         masked: no
       register: containerd_service_state
+
