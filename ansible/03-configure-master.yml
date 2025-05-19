@@ -1,1 +1,40 @@
-﻿
+﻿---
+- name: Install Calico in production
+  become: true
+  hosts: master
+  vars_files:
+    - vars.yml
+
+  tasks:
+    # 1. Скачиваем манифесты
+    - name: Ensure manifests directory exists
+      ansible.builtin.file:
+        path: "{{ manifests_dir }}"
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+
+    - name: Download Calico manifests
+      ansible.builtin.get_url:
+        url: "https://raw.githubusercontent.com/projectcalico/calico/{{ calico_version }}/manifests/tigera-operator.yaml"
+        dest: "/opt/k8s/manifests/calico-operator-{{ calico_version }}.yaml"
+
+    # 2. Применяем оператор
+    - name: Apply Tigera Operator
+      ansible.builtin.shell: |
+        kubectl apply -f /opt/k8s/manifests/calico-operator-{{ calico_version }}.yaml
+
+    # 3. Кастомизируем конфиг
+    - name: Deploy Calico custom resources
+      ansible.builtin.template:
+        src: "templates/calico/custom-resources.yaml.j2"
+        dest: "/etc/kubernetes/manifests/calico-custom-resources.yaml"
+        owner: root
+        group: root
+        mode: '0644'
+
+    # 4. Применяем кастомные ресурсы
+    - name: Apply custom resources
+      ansible.builtin.shell: |
+        kubectl apply -f /opt/k8s/manifests/calico-custom-resources.yaml
