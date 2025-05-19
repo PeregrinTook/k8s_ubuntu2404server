@@ -86,16 +86,16 @@
     - name: Extract Containerd archive to /usr/local
       ansible.builtin.unarchive:
         src: "/tmp/containerd-{{ containerd_version }}-linux-amd64.tar.gz"
-        dest: "/usr/local"  # Извлекаем сразу в целевую директорию
+        dest: "/usr/local"
         remote_src: yes
         # extra_opts: ["--strip-components=1"]  # Пропускаем корневую папку в архиве
         owner: root
         group: root
         mode: '0755'
-        creates: "/usr/local/bin/containerd"  # Проверка существования результата
+        creates: "/usr/local/bin/containerd"
       register: containerd_extract
       changed_when: containerd_extract.changed
-    # Диагностика: проверяем что распаковалось
+      
     - name: Check extracted files
       ansible.builtin.command: ls -l /usr/local/bin/
       register: ls_result
