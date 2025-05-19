@@ -86,8 +86,8 @@ resource "libvirt_domain" "ubuntu_vm" {
   depends_on = [libvirt_pool.k8s_vms_pool]
 }
 resource "local_file" "ansible_inventory" {
-  filename = "${path.module}/ansible/inventory.yml"
-  content = templatefile("${path.module}/ansible/inventory_template.yml.tpl", {
+  filename = "${path.module}/../ansible/inventory.yml"
+  content = templatefile("${path.module}/../ansible/inventory_template.yml.tpl", {
     master_ip  = var.vms[0].ip_inner,
     worker_ips = slice([for vm in var.vms : vm.ip_inner], 1, length(var.vms))
   })
