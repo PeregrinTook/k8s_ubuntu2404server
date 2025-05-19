@@ -42,7 +42,7 @@
       register: pkg_upgrade
       environment:
         DEBIAN_FRONTEND: noninteractive
-      changed_when: "'upgraded' in pkg_upgrade.stdout"
+      changed_when: pkg_upgrade.get('changed', False)
       tags: [system_update, bootstrap]
 
     - name: Clean package cache
