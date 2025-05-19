@@ -4,11 +4,14 @@ kube_version: "1.33.1"
 calico_version: "v3.30.0"
 containerd_version: "2.1.0"
 runc_version: "v1.3.0"
+cni_plugins_version: "1.7.1"
 
 containerd_url: "https://github.com/containerd/containerd/releases/download/v{{ containerd_version }}/containerd-{{ containerd_version }}-linux-amd64.tar.gz"
 containerd_url_checksum: "https://github.com/containerd/containerd/releases/download/v{{ containerd_version }}/containerd-{{ containerd_version }}-linux-amd64.tar.gz.sha256sum"
-runc_url: https://github.com/opencontainers/runc/releases/download/{{ runc_version }}/runc.amd64
-runc_asc: https://github.com/opencontainers/runc/releases/download/{{ runc_version }}/runc.amd64.asc
+runc_url: "https://github.com/opencontainers/runc/releases/download/{{ runc_version }}/runc.amd64"
+runc_asc: "https://github.com/opencontainers/runc/releases/download/{{ runc_version }}/runc.amd64.asc"
+cni_plugins_url: "https://github.com/containernetworking/plugins/releases/download/v{{ cni_plugins_version }}/cni-plugins-linux-amd64-v1.7.1.tgz"
+cni_url_checksum: "https://github.com/containernetworking/plugins/releases/download/v{{ cni_plugins_version }}/cni-plugins-linux-amd64-v1.7.1.tgz.sha256"
 
 runc:
   pgp:
