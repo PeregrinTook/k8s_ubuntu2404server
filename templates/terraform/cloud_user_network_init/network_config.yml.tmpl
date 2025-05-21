@@ -1,0 +1,16 @@
+﻿network:
+  version: 2
+  ethernets:
+    ens3:
+      dhcp4: true
+      dhcp4-overrides:
+        route-metric: 100
+      nameservers:
+        addresses:
+          - 8.8.8.8
+          - 8.8.4.4
+          - 1.1.1.1
+    ens4:
+      dhcp4: false
+      addresses:
+        - ${ip_address_inner}/24
