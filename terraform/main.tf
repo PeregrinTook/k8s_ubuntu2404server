@@ -37,7 +37,7 @@ resource "null_resource" "create_vm_dirs" {
   for_each = { for vm in var.vms : vm.hostname => vm }
 
   provisioner "local-exec" {
-    command = "mkdir -p ${path.module}/../config_vms/${each.key}"
+    command = "mkdir -p ${path.module}/../config_vms_autogen/${each.key}"
   }
 }
 resource "null_resource" "cleanup_vm_dirs" {
@@ -45,27 +45,27 @@ resource "null_resource" "cleanup_vm_dirs" {
 
   provisioner "local-exec" {
     when    = destroy
-    command = "rm -rf ${path.module}/../config_vms/${each.key}"
+    command = "rm -rf ${path.module}/../config_vms_autogen/${each.key}"
   }
 }
 
 resource "local_file" "cloud_init" {
   for_each = { for vm in var.vms : vm.hostname => vm }
 
-  filename = "${path.module}/../config_vms/${each.key}/cloud_init.yml"
-  content  = templatefile("${path.module}/../templates/terraform/cloud_user_network_init/cloud_init.yml.tmpl", {
+  filename = "${path.module}/../config_vms_autogen/${each.key}/cloud_init.yml"
+  content = templatefile("${path.module}/../templates/terraform/cloud_user_network_init/cloud_init.yml.tmpl", {
     username = "k8s"
     hostname = each.value.hostname
     ssh_key  = file(var.ssh_key_path)
   })
-  depends_on = [ null_resource.create_vm_dirs ]
+  depends_on = [null_resource.create_vm_dirs]
 }
 
 resource "local_file" "network_config" {
   for_each = { for vm in var.vms : vm.hostname => vm }
 
-  filename = "${path.module}/../config_vms/${each.key}/network_config.yml"
-  content  = templatefile("${path.module}/../templates/terraform/cloud_user_network_init/network_config.yml.tmpl", {
+  filename = "${path.module}/../config_vms_autogen/${each.key}/network_config.yml"
+  content = templatefile("${path.module}/../templates/terraform/cloud_user_network_init/network_config.yml.tmpl", {
     ip_address_inner = each.value.ip_inner
     # gateway    = var.gateway
   })
