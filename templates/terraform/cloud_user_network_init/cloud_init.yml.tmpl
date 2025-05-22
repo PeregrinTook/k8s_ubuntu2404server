@@ -27,10 +27,11 @@ package_upgrade: true
 fs_setup:
   - label: containerd_disk
     device: /dev/vdb
+    partition: auto
     filesystem: ext4
 
 mounts:
-  - [ "/dev/vdb", "/var/lib/containerd", "ext4", "defaults,nofail", "0", "2" ]
+  - [ "LABEL=containerd_disk", "/var/lib/containerd", "ext4", "defaults,nofail,discard", "0", "2" ]
 
 runcmd:
   - mkdir -p /var/lib/containerd

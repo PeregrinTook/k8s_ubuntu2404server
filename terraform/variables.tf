@@ -17,36 +17,36 @@ variable "vms" {
       system_disk_gb     = 10
       containerd_disk_gb = 10
     },
-    {
-      hostname           = "k8s-master2"
-      username           = "ks8"
-      memory             = 4096
-      vcpu               = 2
-      ip_inner           = "192.168.100.51"
-      k8s_role           = "control-plane"
-      system_disk_gb     = 10
-      containerd_disk_gb = 30
-    },
-    {
-      hostname           = "k8s-worker1"
-      username           = "ks8"
-      memory             = 4096
-      vcpu               = 2
-      ip_inner           = "192.168.100.52"
-      k8s_role           = "worker"
-      system_disk_gb     = 20
-      containerd_disk_gb = 30
-    },
-    {
-      hostname           = "k8s-worker2"
-      username           = "ks8"
-      memory             = 4096
-      vcpu               = 2
-      ip_inner           = "192.168.100.53"
-      k8s_role           = "worker"
-      system_disk_gb     = 20
-      containerd_disk_gb = 30
-    },
+    # {
+    #   hostname           = "k8s-master2"
+    #   username           = "ks8"
+    #   memory             = 4096
+    #   vcpu               = 2
+    #   ip_inner           = "192.168.100.51"
+    #   k8s_role           = "control-plane"
+    #   system_disk_gb     = 10
+    #   containerd_disk_gb = 30
+    # },
+    # {
+    #   hostname           = "k8s-worker1"
+    #   username           = "ks8"
+    #   memory             = 4096
+    #   vcpu               = 2
+    #   ip_inner           = "192.168.100.52"
+    #   k8s_role           = "worker"
+    #   system_disk_gb     = 20
+    #   containerd_disk_gb = 30
+    # },
+    # {
+    #   hostname           = "k8s-worker2"
+    #   username           = "ks8"
+    #   memory             = 4096
+    #   vcpu               = 2
+    #   ip_inner           = "192.168.100.53"
+    #   k8s_role           = "worker"
+    #   system_disk_gb     = 20
+    #   containerd_disk_gb = 30
+    # },
     # {
     #   hostname    = "k8s-worker3"
     #   username    = "ks8"

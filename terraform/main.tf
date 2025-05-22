@@ -40,7 +40,7 @@ resource "libvirt_volume" "containerd_disk" {
   for_each = { for vm in var.vms : vm.hostname => vm }
 
   name           = "${each.key}_containerd.qcow2"
-  base_volume_id = libvirt_volume.template.id
+  # base_volume_id = libvirt_volume.template.id
   pool           = libvirt_pool.k8s_vms_pool.name
   size           = each.value.containerd_disk_gb * 1024 * 1024 * 1024
   format         = "qcow2"
