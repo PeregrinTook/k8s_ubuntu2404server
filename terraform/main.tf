@@ -47,8 +47,6 @@ resource "libvirt_volume" "containerd_disk" {
   depends_on     = [libvirt_volume.template]
 }
 
-
-
 resource "null_resource" "create_vm_dirs" {
   for_each = { for vm in var.vms : vm.hostname => vm }
 
