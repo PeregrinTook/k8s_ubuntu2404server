@@ -43,14 +43,6 @@ calico_custom_resources_url: "https://raw.githubusercontent.com/projectcalico/ca
 
 # Настройки для всех узлов
 
-hosts_entries:
-  - ip: 192.168.100.50
-    hostname: k8s-m
-  - ip: 192.168.100.51
-    hostname: k8s-w1
-  - ip: 192.168.100.52
-    hostname: k8s-w2
-
 common_system_packages:
   - apt-transport-https
   - curl

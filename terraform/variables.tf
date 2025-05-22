@@ -1,15 +1,15 @@
 variable "ssh_key_path" {
   description = "Default SSH public key path"
   default     = "~/.ssh/id_rsa.pub"
+  sensitive   = true
 }
 
 variable "vms" {
   description = "List of VMs with unique configs"
   default = [
     {
-      hostname           = "k8s-m"
+      hostname           = "k8s-master"
       username           = "ks8"
-      config_path        = "../config/vm_k8s_m"
       memory             = 4096
       vcpu               = 2
       ip_inner           = "192.168.100.50"
@@ -18,35 +18,42 @@ variable "vms" {
       containerd_disk_gb = 10
     },
     {
-      hostname           = "k8s-w1"
+      hostname           = "k8s-master2"
       username           = "ks8"
-      config_path        = "../config/vm_k8s_w1"
       memory             = 4096
       vcpu               = 2
       ip_inner           = "192.168.100.51"
-      k8s_role           = "worker"
+      k8s_role           = "control-plane"
       system_disk_gb     = 10
       containerd_disk_gb = 30
     },
+    {
+      hostname           = "k8s-worker1"
+      username           = "ks8"
+      memory             = 4096
+      vcpu               = 2
+      ip_inner           = "192.168.100.52"
+      k8s_role           = "worker"
+      system_disk_gb     = 20
+      containerd_disk_gb = 30
+    },
+    {
+      hostname           = "k8s-worker2"
+      username           = "ks8"
+      memory             = 4096
+      vcpu               = 2
+      ip_inner           = "192.168.100.53"
+      k8s_role           = "worker"
+      system_disk_gb     = 20
+      containerd_disk_gb = 30
+    },
     # {
-    #   hostname    = "k8s-w2"
+    #   hostname    = "k8s-worker3"
     #   username    = "ks8"
-    #   config_path = "../config/vm_k8s_w2"
     #   memory      = 4096
     #   vcpu        = 2
-    #   ip_inner    = "192.168.100.52"
+    #   ip_inner    = "192.168.100.54"
     #   k8s_role    = "worker"
-    #   system_disk_gb = 20
-    #   containerd_disk_gb = 30
-    # },
-    # {
-    #   hostname    = "k8s-m2"
-    #   username    = "ks8"
-    #   config_path = "../config/vm_k8s_m2"
-    #   memory      = 4096
-    #   vcpu        = 2
-    #   ip_inner    = "192.168.100.53"
-    #   k8s_role    = "control-plane"
     #   system_disk_gb = 20
     #   containerd_disk_gb = 30
     # }

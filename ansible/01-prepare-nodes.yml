@@ -79,11 +79,12 @@
         path: /etc/hosts
         marker: "# {mark} K8S CLUSTER NODES"
         block: |
-          {% for entry in hosts_entries %}
-          {{ entry.ip }} {{ entry.hostname }} {{ entry.hostname.split('.')[0] }}
+          {% for host in groups['all'] %}
+          {{ hostvars[host]['ansible_host'] }} {{ host }} {{ host.split('.')[0] }}
           {% endfor %}
         state: present
         backup: true
       register: hosts_file
       changed_when: hosts_file.changed
       tags: [networking, bootstrap]
+

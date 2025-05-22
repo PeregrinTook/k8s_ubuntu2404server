@@ -136,15 +136,25 @@ resource "libvirt_domain" "ubuntu_vm" {
   depends_on = [libvirt_cloudinit_disk.ubuntu_init, libvirt_volume.containerd_disk, libvirt_volume.system_disk]
 }
 
-# resource "local_file" "ansible_inventory" {
+resource "local_file" "ansible_inventory" {
+  filename = "${path.module}/../ansible/inventory.yml"
+  content = templatefile("${path.module}/../ansible/inventory_template.yml.tpl", {
+    masters = [
+      for vm in var.vms : {
+        name = vm.hostname
+        ip   = vm.ip_inner
+      } if vm.k8s_role == "control-plane"
+    ]
+    workers = [
+      for vm in var.vms : {
+        name = vm.hostname
+        ip   = vm.ip_inner
+      } if vm.k8s_role == "worker"
+    ]
+  })
+  depends_on = [libvirt_domain.ubuntu_vm]
+}
 
-#   filename = "${path.module}/../ansible/inventory.yml"
-#   content = templatefile("${path.module}/../ansible/inventory_template.yml.tpl", {
-#     masters = [for vm in var.vms : vm if vm.k8s_role == "control-plane"],
-#     workers = [for vm in var.vms : vm if vm.k8s_role == "worker"]
-#   })
-#   depends_on = [libvirt_domain.ubuntu_vm]
-# }
 
 output "VM_info" {
   value = {

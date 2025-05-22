@@ -1,22 +1,26 @@
 ﻿all:
   children:
-    master:
+    masters:
       hosts:
-        ${master_ip}:
+%{ for vm in masters ~}
+        ${vm.name}:
+          ansible_host: ${vm.ip}
           ansible_user: k8s
           ansible_become: yes
           ansible_python_interpreter: /usr/bin/python3
           ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
+%{ endfor ~}
 
     workers:
       hosts:
-%{ for ip in worker_ips }
-        ${ip}:
+%{ for vm in workers ~}
+        ${vm.name}:
+          ansible_host: ${vm.ip}
           ansible_user: k8s
           ansible_become: yes
           ansible_python_interpreter: /usr/bin/python3
           ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
-%{ endfor }
+%{ endfor ~}
 
   vars:
     ansible_ssh_private_key_file: ~/.ssh/id_rsa

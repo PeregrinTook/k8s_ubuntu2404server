@@ -1,8 +1,15 @@
 all:
   children:
-    master:
+    masters:
       hosts:
-        192.168.100.50:
+        k8s-master:
+          ansible_host: 192.168.100.50
+          ansible_user: k8s
+          ansible_become: yes
+          ansible_python_interpreter: /usr/bin/python3
+          ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
+        k8s-master2:
+          ansible_host: 192.168.100.51
           ansible_user: k8s
           ansible_become: yes
           ansible_python_interpreter: /usr/bin/python3
@@ -10,19 +17,18 @@ all:
 
     workers:
       hosts:
-
-        192.168.100.51:
+        k8s-worker1:
+          ansible_host: 192.168.100.52
           ansible_user: k8s
           ansible_become: yes
           ansible_python_interpreter: /usr/bin/python3
           ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
-
-        192.168.100.52:
+        k8s-worker2:
+          ansible_host: 192.168.100.53
           ansible_user: k8s
           ansible_become: yes
           ansible_python_interpreter: /usr/bin/python3
           ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
-
 
   vars:
     ansible_ssh_private_key_file: ~/.ssh/id_rsa
