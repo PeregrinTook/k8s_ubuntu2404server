@@ -13,3 +13,4 @@ terraform/.terraform.lock.hcl
 */for_k8s_vms/
 for_k8s_vms/
 
+images/ubuntu-template.qcow2.backup

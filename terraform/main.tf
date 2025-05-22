@@ -18,15 +18,36 @@ resource "libvirt_network" "vm_net" {
   autostart = true
 }
 
-resource "libvirt_volume" "ubuntu_disk" {
+resource "libvirt_volume" "template" {
+  name   = "ubuntu-template"
+  source = "${path.module}/../images/ubuntu-template.qcow2"
+  pool   = libvirt_pool.k8s_vms_pool.name
+  format = "qcow2"
+}
+
+resource "libvirt_volume" "system_disk" {
   for_each = { for vm in var.vms : vm.hostname => vm }
 
-  name       = "${each.value.hostname}_disk.qcow2"
-  source     = "${path.module}/../images/ubuntu-template.qcow2"
-  pool       = libvirt_pool.k8s_vms_pool.name
-  format     = "qcow2"
-  depends_on = [libvirt_pool.k8s_vms_pool]
+  name           = "${each.key}_system.qcow2"
+  base_volume_id = libvirt_volume.template.id
+  pool           = libvirt_pool.k8s_vms_pool.name
+  size           = each.value.system_disk_gb * 1024 * 1024 * 1024
+  format         = "qcow2"
+  depends_on     = [libvirt_volume.template]
 }
+
+resource "libvirt_volume" "containerd_disk" {
+  for_each = { for vm in var.vms : vm.hostname => vm }
+
+  name           = "${each.key}_containerd.qcow2"
+  base_volume_id = libvirt_volume.template.id
+  pool           = libvirt_pool.k8s_vms_pool.name
+  size           = each.value.containerd_disk_gb * 1024 * 1024 * 1024
+  format         = "qcow2"
+  depends_on     = [libvirt_volume.template]
+}
+
+
 
 resource "null_resource" "create_vm_dirs" {
   for_each = { for vm in var.vms : vm.hostname => vm }
@@ -34,7 +55,7 @@ resource "null_resource" "create_vm_dirs" {
   provisioner "local-exec" {
     command = "mkdir -p ${path.module}/../config_vms_autogen/${each.key}"
   }
-  depends_on = [libvirt_volume.ubuntu_disk]
+  depends_on = [libvirt_volume.containerd_disk, libvirt_volume.system_disk]
 }
 
 resource "null_resource" "cleanup_vm_dirs" {
@@ -44,7 +65,7 @@ resource "null_resource" "cleanup_vm_dirs" {
     when    = destroy
     command = "rm -rf ${path.module}/../config_vms_autogen/${each.key}"
   }
-  depends_on = [libvirt_volume.ubuntu_disk]
+  depends_on = [libvirt_volume.containerd_disk, libvirt_volume.system_disk]
 }
 
 resource "local_file" "cloud_init" {
@@ -54,7 +75,7 @@ resource "local_file" "cloud_init" {
   content = templatefile("${path.module}/../templates/terraform/cloud_user_network_init/cloud_init.yml.tmpl", {
     username = "k8s"
     hostname = each.value.hostname
-    ssh_key  = file(var.ssh_key_path)
+    ssh_key  = file(lookup(each.value, "ssh_key", var.ssh_key_path))
   })
   depends_on = [null_resource.create_vm_dirs]
 }
@@ -106,11 +127,15 @@ resource "libvirt_domain" "ubuntu_vm" {
   }
 
   disk {
-    volume_id = libvirt_volume.ubuntu_disk[each.key].id
+    volume_id = libvirt_volume.system_disk[each.key].id
+  }
+
+  disk {
+    volume_id = libvirt_volume.containerd_disk[each.key].id
   }
 
   cloudinit  = libvirt_cloudinit_disk.ubuntu_init[each.key].id
-  depends_on = [libvirt_pool.k8s_vms_pool]
+  depends_on = [libvirt_cloudinit_disk.ubuntu_init, libvirt_volume.containerd_disk, libvirt_volume.system_disk]
 }
 
 # resource "local_file" "ansible_inventory" {
@@ -126,12 +151,15 @@ resource "libvirt_domain" "ubuntu_vm" {
 output "VM_info" {
   value = {
     for vm in var.vms : vm.hostname => {
-      name      = libvirt_domain.ubuntu_vm[vm.hostname].name
-      memory    = libvirt_domain.ubuntu_vm[vm.hostname].memory
-      vcpu      = libvirt_domain.ubuntu_vm[vm.hostname].vcpu
-      mac_inner = libvirt_domain.ubuntu_vm[vm.hostname].network_interface[1].mac
-      status    = libvirt_domain.ubuntu_vm[vm.hostname].running
-      ip_inner  = vm.ip_inner
+      name       = libvirt_domain.ubuntu_vm[vm.hostname].name
+      memory     = libvirt_domain.ubuntu_vm[vm.hostname].memory
+      vcpu       = libvirt_domain.ubuntu_vm[vm.hostname].vcpu
+      mac_inner  = libvirt_domain.ubuntu_vm[vm.hostname].network_interface[1].mac
+      status     = libvirt_domain.ubuntu_vm[vm.hostname].running
+      sys_disk   = format("%.0f GiB", libvirt_volume.system_disk[vm.hostname].size / 1024 / 1024 / 1024)
+      contd_disk = format("%.0f GiB", libvirt_volume.containerd_disk[vm.hostname].size / 1024 / 1024 / 1024)
+      ip_inner   = vm.ip_inner
+      role       = vm.k8s_role
     }
   }
 }
