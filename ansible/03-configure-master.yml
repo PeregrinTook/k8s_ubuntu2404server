@@ -1,40 +1,119 @@
 ﻿---
 - name: Install Calico in production
   become: true
-  hosts: master
+  hosts: masters
   vars_files:
     - vars.yml
 
   tasks:
-    # 1. Скачиваем манифесты
-    - name: Ensure manifests directory exists
-      ansible.builtin.file:
-        path: "{{ manifests_dir }}"
-        state: directory
-        owner: root
-        group: root
+    # 1. Проверка состояния кластера
+    - name: Check if kubeadm has already been run
+      stat:
+        path: /etc/kubernetes/admin.conf
+      register: kubeadm_already_run
+
+    - name: Check for kubeconfig in root home
+      stat:
+        path: /root/.kube/config
+      register: kubeconfig_exists
+
+    # 2. Инициализация кластера (если нужно)
+    - name: Run kubeadm init
+      ansible.builtin.shell:
+        cmd: |
+          kubeadm init \
+            --pod-network-cidr={{ calico_pod_cidr }} \
+            --kubernetes-version={{ kube_version }} \
+            --node-name={{ inventory_hostname }}
+      register: kubeadm_init_output
+      failed_when: "kubeadm_init_output.rc is defined and kubeadm_init_output.rc != 0"
+      when: not kubeadm_already_run.stat.exists
+
+    # 3. Настройка окружения
+    - name: Set KUBECONFIG for root user
+      ansible.builtin.lineinfile:
+        path: /root/.bashrc
+        line: "export KUBECONFIG=/etc/kubernetes/admin.conf"
+        create: yes
+        insertafter: EOF
+      when: kubeadm_already_run.stat.exists or (kubeadm_init_output is defined and kubeadm_init_output.get('rc', 1) == 0)
+
+    - name: Create KUBECONFIG script in /etc/profile.d
+      ansible.builtin.copy:
+        dest: /etc/profile.d/kubeconfig.sh
+        content: |
+          #!/bin/bash
+          export KUBECONFIG=/etc/kubernetes/admin.conf
         mode: '0755'
+      when: kubeadm_already_run.stat.exists or (kubeadm_init_output is defined and kubeadm_init_output.get('rc', 1) == 0)
 
-    - name: Download Calico manifests
-      ansible.builtin.get_url:
-        url: "https://raw.githubusercontent.com/projectcalico/calico/{{ calico_version }}/manifests/tigera-operator.yaml"
-        dest: "/opt/k8s/manifests/calico-operator-{{ calico_version }}.yaml"
-
-    # 2. Применяем оператор
-    - name: Apply Tigera Operator
+    # 4. Настройка kubeconfig (только если нужно)
+    - name: Set up kubeconfig for root user
       ansible.builtin.shell: |
-        kubectl apply -f /opt/k8s/manifests/calico-operator-{{ calico_version }}.yaml
+        mkdir -p /root/.kube
+        cp -i /etc/kubernetes/admin.conf /root/.kube/config
+        chown root:root /root/.kube/config
+      args:
+        executable: /bin/bash
+      when: (kubeadm_already_run.stat.exists and not kubeconfig_exists.stat.exists) or 
+            (kubeadm_init_output is defined and kubeadm_init_output.get('rc', 1) == 0)
 
-    # 3. Кастомизируем конфиг
-    - name: Deploy Calico custom resources
-      ansible.builtin.template:
-        src: "templates/calico/custom-resources.yaml.j2"
-        dest: "/etc/kubernetes/manifests/calico-custom-resources.yaml"
-        owner: root
-        group: root
+    # 5. Отображение вывода (только при инициализации)
+    - name: Show kubeadm init output
+      ansible.builtin.debug:
+        msg: "{{ kubeadm_init_output.stdout }}"
+      when: kubeadm_init_output is defined and kubeadm_init_output.get('rc', 1) == 0
+
+    # 6. Скачиваем манифесты
+    - name: Download Helm GPG key
+      get_url:
+        url: https://baltocdn.com/helm/signing.asc
+        dest: /tmp/helm.asc
         mode: '0644'
+      retries: 3
+      delay: 5
 
-    # 4. Применяем кастомные ресурсы
-    - name: Apply custom resources
-      ansible.builtin.shell: |
-        kubectl apply -f /opt/k8s/manifests/calico-custom-resources.yaml
+    - name: Convert Helm GPG key to dearmored format
+      command: gpg --dearmor -o /usr/share/keyrings/helm.gpg /tmp/helm.asc
+      args:
+        creates: /usr/share/keyrings/helm.gpg
+
+    - name: Add Helm APT repository
+      ansible.builtin.apt_repository:
+        repo: "deb [arch=amd64 signed-by=/usr/share/keyrings/helm.gpg] https://baltocdn.com/helm/stable/debian/ all main"
+        filename: helm
+        state: present
+        update_cache: yes
+
+    - name: Install Helm
+      apt:
+        name: helm
+        state: present
+    
+    - name: Add Calico Helm repository
+      command: helm repo add projectcalico https://docs.tigera.io/calico/charts
+      when: kubeadm_already_run.stat.exists or (kubeadm_init_output is defined and kubeadm_init_output.get('rc', 1) == 0)
+
+    - name: Update Helm repositories
+      command: helm repo update
+      when: kubeadm_already_run.stat.exists or (kubeadm_init_output is defined and kubeadm_init_output.get('rc', 1) == 0)
+
+    - name: Install Calico using Helm (Tigera Operator)
+      command: |
+        helm upgrade --install calico projectcalico/tigera-operator \
+          --namespace tigera-operator \
+          --create-namespace \
+          --set installation.kubernetesProvider=""
+      when: kubeadm_already_run.stat.exists or (kubeadm_init_output is defined and kubeadm_init_output.get('rc', 1) == 0)
+
+    - name: Generate join command
+      command: kubeadm token create --print-join-command --ttl=2h
+      register: join_command
+      run_once: true
+      changed_when: false
+
+    - name: Share join command as fact
+      set_fact:
+        cluster_join_command: "{{ join_command.stdout }}"
+      run_once: true
+

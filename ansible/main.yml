@@ -1,0 +1,4 @@
+﻿- import_playbook: 01-prepare-nodes.yml
+- import_playbook: 02-configure-containerd.yml
+- import_playbook: 03-configure-master.yml
+- import_playbook: 05-join-workers.yml

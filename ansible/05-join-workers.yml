@@ -1,1 +1,18 @@
-﻿
+﻿- name: Install Calico in production
+  become: true
+  hosts: workers
+  vars_files:
+    - vars.yml
+
+  tasks:
+    # 1. join workers
+    - name: Join cluster using master's command
+      command: "{{ hostvars[groups['masters'][0]]['cluster_join_command'] }}"
+      register: join_result
+      ignore_errors: yes
+      changed_when: "'This node has joined the cluster' in join_result.stdout"
+
+    - name: Verify successful join
+      debug:
+        msg: "Worker {{ inventory_hostname }} joined successfully"
+      when: "'This node has joined the cluster' in join_result.stdout"
