@@ -77,3 +77,4 @@ root@k8s-master:~# systemctl --failed
 source ~/ansible-venv/bin/activate && ansible-playbook -i ansible/inventory.yml ansible/k8s_cluster_with_calico.yml
 
 ansible-playbook -i ansible/inventory.yml ansible/01-prepare-nodes.yml --tags "now"
+(cd /home/alexkol/k8s_ubuntu2404server && ansible-playbook -i ansible/inventory.yml ansible/main.yml )
