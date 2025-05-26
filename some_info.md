@@ -73,12 +73,13 @@ source ~/ansible-venv/bin/activate
 
 root@k8s-master:~# systemctl --failed
 
-
-source ~/ansible-venv/bin/activate && ansible-playbook -i ansible/inventory.yml ansible/k8s_cluster_with_calico.yml
-
-ansible-playbook -i ansible/inventory.yml ansible/01-prepare-nodes.yml --tags "now"
-( terraform apply -auto-approve && terraform output -json VM_info > vm_info.json &&
-source ~/ansible-venv/bin/activate && cd /home/alexkol/k8s_ubuntu2404server && ansible-playbook -i ansible/inventory.yml ansible/main.yml )
-
 kubectl logs calico-node-qsxw4 -n calico-system
 kubectl describe pod calico-node-qsxw4 -n calico-system
+
+
+source ~/ansible-venv/bin/activate
+(cd /home/alexkol/k8s_ubuntu2404server/terraform && terraform apply -auto-approve && terraform output -json VM_info > vm_info.json)
+(cd /home/alexkol/k8s_ubuntu2404server && ansible-playbook -i ansible/inventory.yml ansible/main.yml)
+
+"http://prometheus-server.monitoring.svc"
+

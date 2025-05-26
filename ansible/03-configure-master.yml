@@ -117,3 +117,14 @@
         cluster_join_command: "{{ join_command.stdout }}"
       run_once: true
 
+    - name: copying my-k8s-files
+      copy:
+        src: /home/alexkol/k8s_ubuntu2404server/ansible/k8s-files
+        dest: /root/
+        mode: preserve
+        owner: root
+        group: root
+        directory_mode: 0755
+      tags: now
+
+

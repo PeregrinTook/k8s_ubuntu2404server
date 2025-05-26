@@ -15,3 +15,11 @@ for_k8s_vms/
 
 images/ubuntu-template.qcow2.backup
 terraform/vm_info.json
+config_vms_autogen/k8s-master/cloud_init.yml
+config_vms_autogen/k8s-master/network_config.yml
+config_vms_autogen/k8s-worker1/cloud_init.yml
+config_vms_autogen/k8s-worker1/network_config.yml
+config_vms_autogen/k8s-worker2/cloud_init.yml
+config_vms_autogen/k8s-worker2/network_config.yml
+config_vms_autogen/tester/cloud_init.yml
+config_vms_autogen/tester/network_config.yml

@@ -12,6 +12,11 @@
       ignore_errors: yes
       changed_when: "'This node has joined the cluster' in join_result.stdout"
 
+    - name: Label node with role=worker
+      shell: "kubectl label node {{ inventory_hostname }} node-role.kubernetes.io/worker="
+      delegate_to: "{{ groups['masters'][0] }}"
+      when: "'This node has joined the cluster' in join_result.stdout"
+
     - name: Verify successful join
       debug:
         msg: "Worker {{ inventory_hostname }} joined successfully"
