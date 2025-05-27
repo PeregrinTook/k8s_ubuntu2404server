@@ -6,6 +6,8 @@ calico_version: "v3.30.0"
 containerd_version: "2.1.0"
 runc_version: "v1.3.0"
 cni_plugins_version: "1.7.1"
+ingress_nginx_version: "4.12.2"
+ingress_nginx_namespace: "ingress-nginx"
 
 containerd_url: "https://github.com/containerd/containerd/releases/download/v{{ containerd_version }}/containerd-{{ containerd_version }}-linux-amd64.tar.gz"
 containerd_url_checksum: "https://github.com/containerd/containerd/releases/download/v{{ containerd_version }}/containerd-{{ containerd_version }}-linux-amd64.tar.gz.sha256sum"

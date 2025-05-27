@@ -1,0 +1,41 @@
+﻿---
+- name: Install ingress-nginx via Helm
+  become: true
+  hosts: masters
+  vars_files:
+    - vars.yml
+
+  tasks:
+    # 1. Добавляем Helm-репозиторий ingress-nginx
+    - name: "Add ingress-nginx Helm repo"
+      ansible.builtin.command: "helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx"
+      changed_when: false
+      tags: helm
+
+    # 2. Обновляем Helm-репозитории
+    - name: "Update Helm repos"
+      ansible.builtin.command: "helm repo update"
+      changed_when: false
+      tags: helm
+
+    # 3. Устанавливаем/обновляем Nginx Ingress Controller
+    - name: "Install/Upgrade Nginx Ingress"
+      ansible.builtin.command: |
+        helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx \
+          --version {{ ingress_nginx_version }} \
+          --namespace {{ ingress_nginx_namespace }} \
+          --create-namespace \
+          --set controller.service.type=NodePort
+      register: helm_install
+      changed_when: "'STATUS: deployed' in helm_install.stdout"
+      tags: deploy
+
+    # 4. Ждем, пока под контроллера станет Ready
+    - name: "Wait for Nginx Ingress Controller to be ready"
+      ansible.builtin.command: |
+        kubectl wait --namespace {{ ingress_nginx_namespace }} \
+          --for=condition=ready pod \
+          --selector=app.kubernetes.io/component=controller \
+          --timeout=120s
+      when: helm_install is changed
+      tags: verify
