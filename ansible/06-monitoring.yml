@@ -3,7 +3,7 @@
   hosts: masters
   become: yes
   vars:
-    grafana_admin_password: "YourSecurePassword123"
+    grafana_admin_password: "z123456789z"
     prometheus_namespace: "monitoring"
     
   tasks:
