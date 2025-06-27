@@ -1,0 +1,42 @@
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hello-node
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: hello-node
+  template:
+    metadata:
+      labels:
+        app: hello-node
+    spec:
+      topologySpreadConstraints:
+      - maxSkew: 1
+        topologyKey: kubernetes.io/hostname
+        whenUnsatisfiable: ScheduleAnyway
+        labelSelector:
+          matchLabels:
+            app: hello-node
+      containers:
+      - name: hello-node
+        image: k8s.gcr.io/echoserver:1.10
+        ports:
+        - containerPort: 8080
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: hello-node
+spec:
+  selector:
+    app: hello-node
+  type: NodePort
+  ports:
+  - port: 8080
+    targetPort: 8080
+    nodePort: 32114

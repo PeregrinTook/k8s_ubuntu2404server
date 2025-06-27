@@ -3,7 +3,7 @@ variable "ssh_key_path" {
   default     = "~/.ssh/id_rsa.pub"
   sensitive   = true
 }
-
+#for joining to cluster k8s_role should be  worker or control-plane
 variable "vms" {
   description = "List of VMs with unique configs"
   default = [
@@ -40,10 +40,10 @@ variable "vms" {
     {
       hostname           = "tester"
       username           = "ks8"
-      memory             = 4096
+      memory             = 2048
       vcpu               = 2
       ip_inner           = "192.168.100.53"
-      k8s_role           = "worker"
+      k8s_role           = "tester"
       system_disk_gb     = 20
       containerd_disk_gb = 30
     },

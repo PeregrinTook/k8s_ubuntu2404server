@@ -1,5 +1,5 @@
 ﻿---
-- name: Install Calico in production
+- name: 03 Install Calico in production
   become: true
   hosts: masters
   vars_files:

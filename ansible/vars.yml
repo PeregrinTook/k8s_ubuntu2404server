@@ -51,3 +51,7 @@ common_system_packages:
   - ca-certificates
   - gpg
   - software-properties-common
+
+#grafana
+grafana_admin_password: "z123456789z"
+prometheus_namespace: "monitoring"

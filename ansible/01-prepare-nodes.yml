@@ -1,5 +1,5 @@
 ﻿---
-- name: Prepare all nodes for Kubernetes cluster
+- name: 01 Prepare all nodes for Kubernetes cluster
   hosts: all
   become: true
   vars_files:

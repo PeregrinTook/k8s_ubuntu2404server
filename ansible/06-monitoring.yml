@@ -1,10 +1,9 @@
 ﻿---
-- name: "Deploy Monitoring Stack (Prometheus + Grafana)"
+- name: 06 Deploy Monitoring Stack (Prometheus + Grafana)
   hosts: masters
   become: yes
-  vars:
-    grafana_admin_password: "z123456789z"
-    prometheus_namespace: "monitoring"
+  vars_files:
+    - vars.yml
     
   tasks:
 
