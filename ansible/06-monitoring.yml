@@ -10,6 +10,7 @@
     - name: "Check if monitoring namespace exists"
       command: kubectl get namespace {{ prometheus_namespace }}
       register: ns_check
+      failed_when: false
       ignore_errors: yes
       changed_when: false
 

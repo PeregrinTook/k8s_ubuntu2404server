@@ -63,6 +63,7 @@
       ansible.builtin.debug:
         msg: "{{ kubeadm_init_output.stdout }}"
       when: kubeadm_init_output is defined and kubeadm_init_output.get('rc', 1) == 0
+      no_log: true
 
     # 6. Скачиваем манифесты
     - name: Download Helm GPG key
@@ -109,6 +110,7 @@
     - name: Generate join command
       command: kubeadm token create --print-join-command --ttl=2h
       register: join_command
+      no_log: true
       run_once: true
       changed_when: false
 
