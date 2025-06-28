@@ -1,9 +1,10 @@
 variable "ssh_key_path" {
   description = "Default SSH public key path"
-  type      = string
-  sensitive = true
+  type        = string
+  sensitive   = true
 }
 variable "vms" {
+  description = "The list of virtual machines"
   type = list(object({
     hostname           = string
     username           = string
