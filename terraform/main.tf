@@ -151,6 +151,7 @@ resource "local_file" "ansible_inventory" {
         ip   = vm.ip_inner
       } if vm.k8s_role == "worker"
     ]
+    ssh = var.ssh_key_path
   })
   depends_on = [libvirt_domain.ubuntu_vm]
 }

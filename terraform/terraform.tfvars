@@ -1,4 +1,4 @@
-ssh_key_path = "~/.ssh/id_rsa.pub"
+ssh_key_path = "~/.ssh/id_ed25519.pub"
 
 
 #for joining VM to cluster k8s_role should be  worker or control-plane
