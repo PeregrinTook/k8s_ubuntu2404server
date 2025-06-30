@@ -144,6 +144,12 @@ resource "local_file" "ansible_inventory" {
         ip   = vm.ip_inner
       } if vm.k8s_role == "worker"
     ]
+    testers = [
+      for vm in var.vms : {
+        name = vm.hostname
+        ip   = vm.ip_inner
+      } if vm.k8s_role == "tester"
+    ]
     ssh = var.ssh_key_path
   })
   depends_on = [libvirt_domain.ubuntu_vm]

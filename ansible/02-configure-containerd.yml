@@ -1,6 +1,6 @@
 ﻿---
 - name: 02 Configure containerd runtime
-  hosts: all
+  hosts: masters, workers
   become: true
   vars_files:
     - vars.yml
