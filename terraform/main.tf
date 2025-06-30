@@ -131,7 +131,7 @@ resource "libvirt_domain" "ubuntu_vm" {
 
 resource "local_file" "ansible_inventory" {
   filename = "${path.module}/../ansible/inventory.yml"
-  content = templatefile("${path.module}/../ansible/inventory_template.yml.tpl", {
+  content = templatefile("${path.module}/../templates/ansible/inventory_template.yml.tpl", {
     masters = [
       for vm in var.vms : {
         name = vm.hostname
