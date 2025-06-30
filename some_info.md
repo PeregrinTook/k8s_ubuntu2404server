@@ -82,4 +82,3 @@ source ~/ansible-venv/bin/activate
 (cd /home/alexkol/k8s_ubuntu2404server && ansible-playbook -i ansible/inventory.yml ansible/main.yml)
 
 "http://prometheus-server.monitoring.svc"
-
