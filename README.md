@@ -1,24 +1,48 @@
-# k8s_ubuntu2404server
-# Shell script for installing Kubernetes cluster
-# Based on: https://www.youtube.com/watch?v=yHbcpBkTLNU&list=LL&index=6&t=1311s
+# Kubernetes Cluster Automation with Terraform and Ansible
 
-# --- Set KUBECONFIG env var permanently ---
-echo "export KUBECONFIG=/etc/kubernetes/admin.conf" >> ~/.bashrc
-source ~/.bashrc
+## Project Overview
+This project automates the deployment of a **Kubernetes cluster on Ubuntu 24.04** using KVM/libvirt virtual machines provisioned with Terraform and configured via Ansible.
 
-# --- Manually install a minimal Alpine VM using virt-install ---
-sudo virt-install \
-  --name alpine-vm \                                 # VM name
-  --memory 512 \                                     # RAM in MB
-  --vcpus 1 \                                        # Number of CPU cores
-  --disk path=/home/alexkol/alpine-vm.qcow2,size=2 \ # Primary disk (QCOW2)
-  --cdrom /home/alexkol/Downloads/alpine-standard-3.21.3-x86_64.iso \ # Alpine ISO
-  --disk path=/home/alexkol/k8s_ubuntu2404server/alpine-answers.iso,device=cdrom,readonly=on \ # Preseed/answer file ISO
-  --os-variant generic \                             # OS variant
-  --network bridge=virbr0,model=virtio               # Use bridged network with virtio driver
+## Disclaimer
+⚠️ **Educational Project Notice**  
+This is a learning-focused implementation designed for practice and experimentation. It:
+- Is not production-ready
+- Doesn't implement all security best practices
+- May lack advanced configurations needed for real-world use
+- Primarily serves as a demonstration of automation tools
 
-# --- Show failed systemd services (useful for troubleshooting) ---
-systemctl --failed
+## Technical Stack
+| Component       | Technologies Used                |
+|-----------------|----------------------------------|
+| Infrastructure  | Terraform, KVM/libvirt, cloud-init |
+| Orchestration  | Kubernetes (kubeadm)             |
+| Container Runtime | containerd                     |
+| Networking      | NGINX Ingress Controller        |
+| Monitoring      | Prometheus + Grafana            |
+| Configuration   | Ansible                         |
 
-# --- Check if containerd uses SystemdCgroup ---
-grep -q "SystemdCgroup = true" "/etc/containerd/config.toml"
+## Implementation Details
+
+### 1. Infrastructure Provisioning (Terraform)
+- Modular architecture with separate components for:
+  - Network configuration
+  - VM creation (master + worker nodes)
+  - Storage setup
+  - Dynamic Ansible inventory generation
+- Uses cloud-init for initial VM configuration
+
+### 2. Cluster Configuration (Ansible)
+Playbooks handle:
+1. Node preparation (packages, system settings)
+2. containerd installation and configuration
+3. Kubernetes master initialization
+4. Worker node joining
+5. Ingress controller deployment
+6. Monitoring stack setup
+
+### 3. Additional Components
+- Sample application deployments
+- Grafana dashboard configuration
+- Legacy scripts for reference
+
+## Project Structure Highlights

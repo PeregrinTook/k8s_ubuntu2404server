@@ -55,5 +55,5 @@ common_system_packages:
   - software-properties-common # Managing software repositories
 
 # Monitoring credentials
-grafana_admin_password: "z123456789z"       # Grafana admin password
+grafana_admin_password: "admin"       # Grafana admin password
 prometheus_namespace: "monitoring"          # Namespace for monitoring stack
