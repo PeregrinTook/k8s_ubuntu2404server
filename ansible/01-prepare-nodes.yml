@@ -6,20 +6,21 @@
     - vars.yml
 
   tasks:
-    # Инициализация
+    # ============ Ensure cloud-init is done
     - name: Wait for cloud-init to complete
       ansible.builtin.command:
         cmd: cloud-init status --wait
       changed_when: false
       tags: [init, bootstrap]
 
-    # Управление пакетами
+    # ============ System updates
     - name: Update apt package index
       ansible.builtin.apt:
         update_cache: true
       changed_when: false
       tags: [system_update]
 
+    # ============ Install common tools
     - name: Install essential packages
       ansible.builtin.apt:
         name: "{{ common_system_packages }}"
@@ -30,12 +31,14 @@
       changed_when: pkg_install.changed
       tags: [packages]
 
+    # ============ Confirm packages are installed
     - name: Verify installed packages
       ansible.builtin.command: dpkg -l "{{ item }}"
       loop: "{{ common_system_packages }}"
       changed_when: false
       tags: [verify]
 
+    # ============ Upgrade existing packages
     - name: Upgrade all packages
       ansible.builtin.apt:
         upgrade: dist
@@ -45,6 +48,7 @@
       changed_when: pkg_upgrade.get('changed', False)
       tags: [system_update, bootstrap]
 
+    # ============ Clean up package cache
     - name: Clean package cache
       ansible.builtin.apt:
         autoclean: true
@@ -52,7 +56,7 @@
       changed_when: "'Cleaned' in cache_clean.stdout"
       tags: [cleanup]
 
-    # Конфигурация системы
+    # ============ Disable swap (required for Kubernetes)
     - name: Permanently disable swap
       block:
         - name: Check swap status
@@ -65,7 +69,7 @@
           ansible.builtin.command: swapoff -a
           when: swap_status.stdout != ""
 
-        - name: Disable swap in fstab
+        - name: Remove swap from fstab
           ansible.builtin.replace:
             path: /etc/fstab
             regexp: '^([^#].*\sswap\s.*)'
@@ -73,7 +77,7 @@
             backup: true
       tags: [system_config, bootstrap]
 
-    # Сетевая конфигурация
+    # ============ Add cluster nodes to /etc/hosts
     - name: Configure host entries
       ansible.builtin.blockinfile:
         path: /etc/hosts
@@ -87,4 +91,3 @@
       register: hosts_file
       changed_when: hosts_file.changed
       tags: [networking, bootstrap]
-

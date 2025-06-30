@@ -6,7 +6,7 @@
     - vars.yml
     
   tasks:
-
+    # ============ 1. Verify and create monitoring namespace if needed
     - name: "Check if monitoring namespace exists"
       command: kubectl get namespace {{ prometheus_namespace }}
       register: ns_check
@@ -18,6 +18,7 @@
       command: kubectl create namespace {{ prometheus_namespace }}
       when: ns_check.rc != 0
 
+    # ============ 2. Configure Helm repositories
     - name: "Add Prometheus Helm repo"
       command: "helm repo add prometheus-community https://prometheus-community.github.io/helm-charts"
       changed_when: false
@@ -30,6 +31,7 @@
       command: "helm repo update"
       changed_when: false
 
+    # ============ 3. Install kube-prometheus-stack
     - name: "Install kube-prometheus-stack"
       command: >
         helm upgrade --install kube-prometheus prometheus-community/kube-prometheus-stack
@@ -40,6 +42,7 @@
       register: prometheus_install
       changed_when: "'STATUS: deployed' in prometheus_install.stdout"
 
+    # ============ 4. Expose Grafana via NodePort
     - name: "Patch Grafana service to NodePort"
       command: >
         kubectl patch svc kube-prometheus-grafana -n {{ prometheus_namespace }}

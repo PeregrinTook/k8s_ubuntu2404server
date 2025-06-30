@@ -5,7 +5,7 @@
     - vars.yml
 
   tasks:
-    # 1. join workers
+    # ============ 1. join workers
     - name: Join cluster using master's command
       command: "{{ hostvars[groups['masters'][0]]['cluster_join_command'] }}"
       register: join_result

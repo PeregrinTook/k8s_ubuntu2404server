@@ -6,7 +6,7 @@
     - vars.yml
 
   tasks:
-    # 1. Проверка состояния кластера
+    # ============ 1. Cluster state verification
     - name: Check if kubeadm has already been run
       stat:
         path: /etc/kubernetes/admin.conf
@@ -17,7 +17,7 @@
         path: /root/.kube/config
       register: kubeconfig_exists
 
-    # 2. Инициализация кластера (если нужно)
+    # ============ 2. Cluster initialization (if needed)
     - name: Run kubeadm init
       ansible.builtin.shell:
         cmd: |
@@ -29,7 +29,7 @@
       failed_when: "kubeadm_init_output.rc is defined and kubeadm_init_output.rc != 0"
       when: not kubeadm_already_run.stat.exists
 
-    # 3. Настройка окружения
+    # ============ 3. Environment configuration
     - name: Set KUBECONFIG for root user
       ansible.builtin.lineinfile:
         path: /root/.bashrc
@@ -47,7 +47,7 @@
         mode: '0755'
       when: kubeadm_already_run.stat.exists or (kubeadm_init_output is defined and kubeadm_init_output.get('rc', 1) == 0)
 
-    # 4. Настройка kubeconfig (только если нужно)
+    # ============ 4. kubeconfig setup (only if needed)
     - name: Set up kubeconfig for root user
       ansible.builtin.shell: |
         mkdir -p /root/.kube
@@ -58,14 +58,14 @@
       when: (kubeadm_already_run.stat.exists and not kubeconfig_exists.stat.exists) or 
             (kubeadm_init_output is defined and kubeadm_init_output.get('rc', 1) == 0)
 
-    # 5. Отображение вывода (только при инициализации)
+    # ============ 5. Display output (only during initialization)
     - name: Show kubeadm init output
       ansible.builtin.debug:
         msg: "{{ kubeadm_init_output.stdout }}"
       when: kubeadm_init_output is defined and kubeadm_init_output.get('rc', 1) == 0
       no_log: true
 
-    # 6. Скачиваем манифесты
+    # ============ 6. Helm and Calico installation
     - name: Download Helm GPG key
       get_url:
         url: https://baltocdn.com/helm/signing.asc
@@ -107,6 +107,7 @@
           --set installation.kubernetesProvider=""
       when: kubeadm_already_run.stat.exists or (kubeadm_init_output is defined and kubeadm_init_output.get('rc', 1) == 0)
 
+    # ============ 7. Cluster join command generation
     - name: Generate join command
       command: kubeadm token create --print-join-command --ttl=2h
       register: join_command
@@ -119,6 +120,7 @@
         cluster_join_command: "{{ join_command.stdout }}"
       run_once: true
 
+    # ============ 8. Copy Kubernetes configuration files
     - name: copying my-k8s-files
       copy:
         src: /home/alexkol/k8s_ubuntu2404server/ansible/k8s-files
@@ -128,5 +130,3 @@
         group: root
         directory_mode: 0755
       tags: now
-
-

@@ -6,7 +6,7 @@
     - vars.yml
 
   tasks:
-    # 1.  Setup containerd modules
+    # ============ Kernel Modules Setup ============
     - name: Ensure containerd.conf exists with correct content
       ansible.builtin.copy:
         dest: /etc/modules-load.d/containerd.conf
@@ -30,7 +30,8 @@
         mode: '0644'
       register: modules_config
       changed_when: modules_config.changed
-    # 5. Setup sysctl for Kubernetes
+
+    # ============ Kernel Networking Parameters ============
     - name: Configure Kubernetes CRI sysctl settings
       ansible.builtin.blockinfile:
         path: /etc/sysctl.d/99-kubernetes-cri.conf
@@ -66,7 +67,7 @@
         (sysctl_verify.stdout != 'unavailable')
       ignore_errors: true
 
-    # 6. Install Containerd
+    # ============ Containerd Installation ============
     - name: Download containerd with checksum verification
       ansible.builtin.get_url:
         url: "{{ containerd_url }}"
@@ -95,7 +96,7 @@
       register: containerd_extract
       changed_when: containerd_extract.changed
 
-    - name: Check extracted files
+    - name: Verify containerd installation
       ansible.builtin.command: ls -l /usr/local/bin/
       register: ls_result
       changed_when: false
@@ -111,12 +112,12 @@
       register: containerd_version_output
       changed_when: false
 
-
     - name: Print Containerd version
       debug:
         msg: "Containerd installed: {{ containerd_version_output.stdout }}"
-    # 7. Install containerd.service
-    - name: Ensure containerd systemd service is configured
+        
+    # ============ Containerd Service Setup ============
+    - name: Configure containerd systemd service
       ansible.builtin.copy:
         dest: /etc/systemd/system/containerd.service
         content: |
@@ -152,8 +153,8 @@
         - Reload systemd
         - Restart containerd
 
-    # 8. Install runc
-    - name: Install GPG prerequisites
+    # ============ Runc Installation ============
+    - name: Install GPG for package verification
       ansible.builtin.package:
         name: gnupg
         state: present
@@ -165,21 +166,21 @@
         mode: '0755'
       register: download_runc
 
-    - name: Download signature file
+    - name: Download runc signature file
       ansible.builtin.get_url:
         url: "{{ runc_asc }}"
         dest: "/tmp/runc.amd64.asc"
         mode: '0644'
       when: download_runc.changed
 
-    - name: Import PGP key
+    - name: Import PGP key for verification
       ansible.builtin.command: >
         gpg --keyserver hkps://keyserver.ubuntu.com
         --recv-keys {{ runc.pgp.key_id }}
       register: import_key
       changed_when: "'imported' in import_key.stdout or 'already' in import_key.stderr"
 
-    - name: Verify key fingerprint
+    - name: Verify key fingerprint matches expected
       ansible.builtin.command: >
         gpg --fingerprint {{ runc.pgp.key_id }}
       register: key_check
@@ -187,7 +188,7 @@
       failed_when: >
         runc.pgp.expected_fingerprint.replace(' ', '') not in key_check.stdout.replace(' ', '')
 
-    - name: Verify runc signature
+    - name: Verify runc binary signature
       ansible.builtin.command: >
         gpg --status-fd 1 --verify /tmp/runc.amd64.asc /tmp/runc.amd64
       register: sig_verify
@@ -197,7 +198,7 @@
         'GOODSIG ' + runc.pgp.key_id not in sig_verify.stdout or
         'VALIDSIG ' + runc.pgp.expected_fingerprint.replace(" ", "") not in sig_verify.stdout
 
-    - name: Install verified runc
+    - name: Install verified runc binary
       ansible.builtin.copy:
         src: "/tmp/runc.amd64"
         dest: "/usr/local/sbin/runc"
@@ -207,8 +208,8 @@
         remote_src: true
       when: sig_verify is succeeded
 
-    # 9 Install CNI plugins
-    - name: Download cni plugins with checksum verification
+    # ============ CNI Plugins Installation ============
+    - name: Download CNI plugins with checksum
       ansible.builtin.get_url:
         url: "{{ cni_plugins_url }}"
         dest: /tmp/cni-plugins-linux-amd64-v{{ cni_plugins_version }}.tgz
@@ -222,7 +223,7 @@
       retries: 3
       delay: 10
 
-    - name: Ensure CNI bin directory exists
+    - name: Create CNI binaries directory
       ansible.builtin.file:
         path: /opt/cni/bin
         state: directory
@@ -243,7 +244,7 @@
         creates: "/opt/cni/bin/bridge"
       when: cni_plugins_download.changed
 
-    # 10 containerd config
+    # ============ Containerd Configuration ============
     - name: Create containerd config directory
       ansible.builtin.file:
         path: /etc/containerd
@@ -252,7 +253,7 @@
         owner: root
         group: root
 
-    - name: Generate containerd default configuration
+    - name: Generate default containerd config
       ansible.builtin.shell: |
         containerd config default | tee /etc/containerd/config.toml
       args:
@@ -260,11 +261,10 @@
       tags:
         - now
 
-    - name: Ensure SystemdCgroup is enabled under the correct section
+    - name: Enable SystemdCgroup in containerd config
       ansible.builtin.blockinfile:
         path: /etc/containerd/config.toml
         marker: "# {mark} ANSIBLE MANAGED - io.containerd.cri"
-        # [plugins.'io.containerd.cri.v1.runtime'.containerd.runtimes.runc.options]
         insertafter: |
           ^\s*\[plugins.'io.containerd.cri.v1.runtime'.containerd.runtimes.runc.options\]
         block: |
@@ -275,8 +275,8 @@
       changed_when: config_toml_edited.changed
       notify: Restart containerd
 
-    # 11 Gpg keys download 
-    - name: Ensure GPG key directory exists
+    # ============ Kubernetes Repository Setup ============
+    - name: Create GPG key directory
       ansible.builtin.file:
         path: /etc/apt/keyrings
         state: directory
@@ -284,7 +284,7 @@
         owner: root
         group: root
 
-    - name: Download Kubernetes GPG key (MAJOR version - v1.33)
+    - name: Download Kubernetes GPG key
       ansible.builtin.shell: |
         curl -fsSL "https://pkgs.k8s.io/core:/stable:/v{{ kube_version_major }}/deb/Release.key" | \
         gpg --batch --yes --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
@@ -293,7 +293,7 @@
       register: key_download
       changed_when: key_download.changed
 
-    - name: Add Kubernetes APT repository (MAJOR version - v1.33)
+    - name: Add Kubernetes APT repository
       ansible.builtin.apt_repository:
         repo: "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v{{ kube_version_major }}/deb/ /"
         state: present
@@ -301,13 +301,13 @@
         update_cache: yes
       when: key_download.changed
 
-    - name: Update APT package list
+    - name: Update package lists
       ansible.builtin.apt:
         update_cache: yes
         cache_valid_time: 3600
       register: apt_update
 
-    - name: Upgrade all packages
+    - name: Upgrade all system packages
       ansible.builtin.apt:
         upgrade: dist
         autoremove: yes
@@ -316,13 +316,13 @@
         - Reboot system if required
         - restart containerd
 
-    - name: Check if reboot required
+    - name: Check if system needs reboot
       ansible.builtin.stat:
         path: /var/run/reboot-required
       register: reboot_required_file
       when: package_upgrades.changed
 
-    - name: Install specific versions of Kubernetes components
+    - name: Install Kubernetes components
       ansible.builtin.apt:
         name:
           - "kubelet={{ kube_version }}-1.1"
@@ -333,12 +333,13 @@
         allow_downgrade: no
       register: kube_pkgs_installed
 
-    - name: Mark Kubernetes packages on hold (if installed/changed)
+    - name: Prevent automatic Kubernetes package updates
       ansible.builtin.command:
         cmd: apt-mark hold kubelet kubeadm kubectl
       when: kube_pkgs_installed.changed
 
   handlers:
+    # ============ System Handlers ============
     - name: Reload systemd
       ansible.builtin.systemd:
         daemon_reload: true
@@ -352,7 +353,7 @@
         daemon_reload: yes
       listen: "restart containerd"
 
-    - name: Ensure containerd service is enabled and running
+    - name: Ensure containerd is running
       ansible.builtin.systemd:
         name: containerd
         enabled: true
@@ -360,7 +361,7 @@
         masked: false
       register: containerd_service_state
 
-    - name: Reboot system if required
+    - name: Reboot if needed after updates
       ansible.builtin.reboot:
         msg: "Rebooting the server after updates"
         connect_timeout: 5

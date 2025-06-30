@@ -6,19 +6,19 @@
     - vars.yml
 
   tasks:
-    # 1. Добавляем Helm-репозиторий ingress-nginx
+    # ============ 1. Add ingress-nginx Helm repository
     - name: "Add ingress-nginx Helm repo"
       ansible.builtin.command: "helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx"
       changed_when: false
       tags: helm
 
-    # 2. Обновляем Helm-репозитории
+    # ============ 2. Update all Helm repositories
     - name: "Update Helm repos"
       ansible.builtin.command: "helm repo update"
       changed_when: false
       tags: helm
 
-    # 3. Устанавливаем/обновляем Nginx Ingress Controller
+    # ============ 3. Install/Upgrade Nginx Ingress Controller
     - name: "Install/Upgrade Nginx Ingress"
       ansible.builtin.command: |
         helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx \
@@ -30,7 +30,7 @@
       changed_when: "'STATUS: deployed' in helm_install.stdout"
       tags: deploy
 
-    # 4. Ждем, пока под контроллера станет Ready
+    # ============ 4. Wait for Ingress Controller pod to become Ready
     - name: "Wait for Nginx Ingress Controller to be ready"
       ansible.builtin.command: |
         kubectl wait --namespace {{ ingress_nginx_namespace }} \
