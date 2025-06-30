@@ -23,3 +23,4 @@ config_vms_autogen/k8s-worker2/cloud_init.yml
 config_vms_autogen/k8s-worker2/network_config.yml
 config_vms_autogen/tester/cloud_init.yml
 config_vms_autogen/tester/network_config.yml
+*/test
