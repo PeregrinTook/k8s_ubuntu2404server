@@ -1,6 +1,5 @@
 ssh_key_path = "~/.ssh/id_ed25519.pub"
 
-
 #for joining VM to cluster k8s_role should be  worker or control-plane
 vms = [
   {
@@ -54,3 +53,10 @@ vms = [
   #   containerd_disk_gb = 30
   # }
 ]
+
+
+pool_name        = "for_k8s_vms"
+vm_net_name      = "vm_open_k8s"
+vm_net_mode      = "open"
+vm_net_domain    = "internal_k8s"
+vm_net_addresses = ["192.168.100.0/24"]

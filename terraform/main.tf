@@ -1,27 +1,20 @@
 provider "libvirt" {
   uri = "qemu:///system"
 }
-resource "libvirt_pool" "k8s_vms_pool" {
-  name = "for_k8s_vms"
-  type = "dir"
 
-  target {
-    path = abspath("${path.module}/../for_k8s_vms/")
-  }
-}
-
-resource "libvirt_network" "vm_net" {
-  name      = "vm_open_k8s"
-  mode      = "open"
-  domain    = "internal_k8s"
-  addresses = ["192.168.100.0/24"]
-  autostart = true
+module "k8s_vms_pool" {
+  source           = "./modules/network"
+  pool_name        = var.pool_name
+  vm_net_name      = var.vm_net_name
+  vm_net_domain    = var.vm_net_domain
+  vm_net_mode      = var.vm_net_mode
+  vm_net_addresses = var.vm_net_addresses
 }
 
 resource "libvirt_volume" "template" {
   name   = "ubuntu-template"
   source = "${path.module}/../images/ubuntu-template.qcow2"
-  pool   = libvirt_pool.k8s_vms_pool.name
+  pool   = module.k8s_vms_pool.pool_name
   format = "qcow2"
 }
 
@@ -30,7 +23,7 @@ resource "libvirt_volume" "system_disk" {
 
   name           = "${each.key}_system.qcow2"
   base_volume_id = libvirt_volume.template.id
-  pool           = libvirt_pool.k8s_vms_pool.name
+  pool           = module.k8s_vms_pool.pool_name
   size           = each.value.system_disk_gb * 1024 * 1024 * 1024
   format         = "qcow2"
   depends_on     = [libvirt_volume.template]
@@ -41,7 +34,7 @@ resource "libvirt_volume" "containerd_disk" {
 
   name = "${each.key}_containerd.qcow2"
   # base_volume_id = libvirt_volume.template.id
-  pool       = libvirt_pool.k8s_vms_pool.name
+  pool       = module.k8s_vms_pool.pool_name
   size       = each.value.containerd_disk_gb * 1024 * 1024 * 1024
   format     = "qcow2"
   depends_on = [libvirt_volume.template]
@@ -92,14 +85,14 @@ resource "libvirt_cloudinit_disk" "ubuntu_init" {
   for_each = { for vm in var.vms : vm.hostname => vm }
 
   name           = "ubuntu-init-${each.value.hostname}.iso"
-  pool           = libvirt_pool.k8s_vms_pool.name
+  pool           = module.k8s_vms_pool.pool_name
   user_data      = local_file.cloud_init[each.key].content
   network_config = local_file.network_config[each.key].content
 
   lifecycle {
     create_before_destroy = true
   }
-  depends_on = [libvirt_pool.k8s_vms_pool, local_file.cloud_init, local_file.network_config]
+  depends_on = [module.k8s_vms_pool, local_file.cloud_init, local_file.network_config]
 }
 
 resource "libvirt_domain" "ubuntu_vm" {
@@ -120,7 +113,7 @@ resource "libvirt_domain" "ubuntu_vm" {
   }
 
   network_interface {
-    network_id = libvirt_network.vm_net.id
+    network_id = module.k8s_vms_pool.network_id
     hostname   = "${each.value.hostname}-private"
   }
 
@@ -155,22 +148,3 @@ resource "local_file" "ansible_inventory" {
   })
   depends_on = [libvirt_domain.ubuntu_vm]
 }
-
-
-output "VM_info" {
-  value = {
-    for vm in var.vms : vm.hostname => {
-      name       = libvirt_domain.ubuntu_vm[vm.hostname].name
-      memory     = libvirt_domain.ubuntu_vm[vm.hostname].memory
-      vcpu       = libvirt_domain.ubuntu_vm[vm.hostname].vcpu
-      mac_inner  = libvirt_domain.ubuntu_vm[vm.hostname].network_interface[1].mac
-      status     = libvirt_domain.ubuntu_vm[vm.hostname].running
-      sys_disk   = format("%.0f GiB", libvirt_volume.system_disk[vm.hostname].size / 1024 / 1024 / 1024)
-      contd_disk = format("%.0f GiB", libvirt_volume.containerd_disk[vm.hostname].size / 1024 / 1024 / 1024)
-      ip_inner   = vm.ip_inner
-      role       = vm.k8s_role
-    }
-  }
-}
-
-
