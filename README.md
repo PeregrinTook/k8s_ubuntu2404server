@@ -45,44 +45,6 @@ Playbooks handle:
 - Grafana dashboard configuration
 - Legacy scripts for reference
 
-## Project Structure
-
-..
-├── ansible
-│ ├── 01-prepare-nodes.yml
-│ ├── 02-configure-containerd.yml
-│ ├── 03-configure-master.yml
-│ ├── 04-nginx-ingress-controller.yml
-│ ├── 05-join-workers.yml
-│ ├── 06-monitoring.yml
-│ ├── k8s-files
-│ │ └── test-deployment_and_svc.yaml
-│ ├── main.yml
-│ └── vars.yml
-├── config_vms_autogen
-├── images
-│ ├── noble-server-cloudimg-amd64.img
-│ ├── ubuntu-template.qcow2
-│ └── ubuntu-template.qcow2.backup
-├── kvm_libvirt_cheatsheet.md
-├── legacy
-│ ├── [old files...]
-├── README.md
-├── some_info.md
-├── templates
-│ ├── ansible
-│ │ └── inventory_template.yml.tpl
-│ └── terraform
-│ └── cloud_user_network_init
-│ ├── cloud_init.yml.tmpl
-│ └── network_config.yml.tmpl
-└── terraform
-├── [terraform files...]
-├── modules
-│ ├── network
-│ ├── storage
-│ └── vm
-
 
 ## Prerequisites
 
