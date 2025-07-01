@@ -10,34 +10,17 @@ module "k8s_vms_pool" {
   vm_net_mode      = var.vm_net_mode
   vm_net_addresses = var.vm_net_addresses
 }
-
-resource "libvirt_volume" "template" {
-  name   = "ubuntu-template"
-  source = "${path.module}/../images/ubuntu-template.qcow2"
-  pool   = module.k8s_vms_pool.pool_name
-  format = "qcow2"
-}
-
-resource "libvirt_volume" "system_disk" {
+module "storage" {
+  source   = "./modules/storage"
   for_each = { for vm in var.vms : vm.hostname => vm }
 
-  name           = "${each.key}_system.qcow2"
-  base_volume_id = libvirt_volume.template.id
-  pool           = module.k8s_vms_pool.pool_name
-  size           = each.value.system_disk_gb * 1024 * 1024 * 1024
-  format         = "qcow2"
-  depends_on     = [libvirt_volume.template]
-}
-
-resource "libvirt_volume" "containerd_disk" {
-  for_each = { for vm in var.vms : vm.hostname => vm }
-
-  name = "${each.key}_containerd.qcow2"
-  # base_volume_id = libvirt_volume.template.id
-  pool       = module.k8s_vms_pool.pool_name
-  size       = each.value.containerd_disk_gb * 1024 * 1024 * 1024
-  format     = "qcow2"
-  depends_on = [libvirt_volume.template]
+  volume_template_name = var.volume_template_name
+  template_image_path  = local.template_image_path
+  pool_name            = var.pool_name
+  name_vm              = each.key
+  system_disk_gb       = each.value.system_disk_gb
+  containerd_disk_gb   = each.value.containerd_disk_gb
+  depends_on           = [module.k8s_vms_pool]
 }
 
 resource "null_resource" "create_vm_dirs" {
@@ -46,7 +29,7 @@ resource "null_resource" "create_vm_dirs" {
   provisioner "local-exec" {
     command = "mkdir -p ${path.module}/../config_vms_autogen/${each.key}"
   }
-  depends_on = [libvirt_volume.containerd_disk, libvirt_volume.system_disk]
+  depends_on = [module.storage]
 }
 
 resource "null_resource" "cleanup_vm_dirs" {
@@ -56,7 +39,7 @@ resource "null_resource" "cleanup_vm_dirs" {
     when    = destroy
     command = "rm -rf ${path.module}/../config_vms_autogen/${each.key}"
   }
-  depends_on = [libvirt_volume.containerd_disk, libvirt_volume.system_disk]
+  depends_on = [module.storage]
 }
 
 resource "local_file" "cloud_init" {
@@ -118,15 +101,16 @@ resource "libvirt_domain" "ubuntu_vm" {
   }
 
   disk {
-    volume_id = libvirt_volume.system_disk[each.key].id
+    # volume_id = libvirt_volume.system_disk[each.key].id
+    volume_id = module.storage[each.key].system_disk_id
   }
 
   disk {
-    volume_id = libvirt_volume.containerd_disk[each.key].id
+    volume_id = module.storage[each.key].containerd_disk_id
   }
 
   cloudinit  = libvirt_cloudinit_disk.ubuntu_init[each.key].id
-  depends_on = [libvirt_cloudinit_disk.ubuntu_init, libvirt_volume.containerd_disk, libvirt_volume.system_disk]
+  depends_on = [libvirt_cloudinit_disk.ubuntu_init, module.storage]
 }
 
 resource "local_file" "ansible_inventory" {

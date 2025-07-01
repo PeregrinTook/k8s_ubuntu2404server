@@ -32,16 +32,16 @@ vms = [
   #   system_disk_gb     = 20
   #   containerd_disk_gb = 30
   # },
-  {
-    hostname           = "tester"
-    username           = "ks8"
-    memory             = 2048
-    vcpu               = 2
-    ip_inner           = "192.168.100.53"
-    k8s_role           = "tester"
-    system_disk_gb     = 20
-    containerd_disk_gb = 30
-  },
+  # {
+  #   hostname           = "tester"
+  #   username           = "ks8"
+  #   memory             = 2048
+  #   vcpu               = 2
+  #   ip_inner           = "192.168.100.53"
+  #   k8s_role           = "tester"
+  #   system_disk_gb     = 20
+  #   containerd_disk_gb = 30
+  # },
   # {
   #   hostname    = "k8s-worker3"
   #   username    = "ks8"
@@ -60,3 +60,5 @@ vm_net_name      = "vm_open_k8s"
 vm_net_mode      = "open"
 vm_net_domain    = "internal_k8s"
 vm_net_addresses = ["192.168.100.0/24"]
+
+volume_template_name = "ubuntu-template"

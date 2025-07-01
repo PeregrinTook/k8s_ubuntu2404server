@@ -41,3 +41,8 @@ variable "vm_net_addresses" {
   description = "CIDR blocks used by the virtual network"
   type        = list(string)
 }
+
+variable "volume_template_name" {
+  description = "The name of the Libvirt volume created from the template image (e.g., 'ubuntu-template')."
+  type        = string
+}
