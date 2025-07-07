@@ -145,4 +145,3 @@ Run Ansible playbook (adjust the path to your project folder):
 
 Deploy infrastructure with Terraform and export VM info:
 (cd /path/to/your/project/terraform && terraform apply -auto-approve && terraform output -json VM_info > vm_info.json)
-#test
